@@ -1,0 +1,36 @@
+#开发环境还是生产环境
+environment = "production1" #production 生产
+
+[database]
+type="mysql"
+drivername="mysql"
+server = "172.168.171.200"
+port="306"
+sid="wallet"
+username="tjlrm"
+password="tjlrm"
+
+#redis 缓存配置
+ [cache]
+#     [cache.cluster] #集群模式
+#         Addrs=["172.168.175.23:7000","172.168.175.23:7001","172.168.175.23:7002","172.168.171.241:7003","172.168.171.241:7004","172.168.171.241:7005"]
+    # [cache.single] #单机模式
+    #     server="172.168.171.103:6379" #地址
+    #     password="" #密码
+    #     db=0   #默认数据库
+
+
+#日志
+[logs]
+filepath="./" #文件目录 结尾带/
+level=5  #日志等级 	 5.debug 4.info 3.warn 2.error 1.fatal 0.panic
+formatter="json"  #json text
+
+[cors]
+origin="*"
+#存储过程调用RPC服务
+
+
+#后端端口号
+[port]
+port=":9090"

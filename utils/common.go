@@ -2,7 +2,9 @@ package utils
 
 import (
 	"bytes"
+	"crypto/md5"
 	"encoding/gob"
+	"encoding/hex"
 	"reflect"
 	"runtime"
 
@@ -19,11 +21,11 @@ type responseData struct {
 }
 
 //WriteMessage API返回消息函数
-func Write(c *gin.Context, state bool, message string, data ...interface{}) {
-	if len(data) > 0 && nil != data[0] {
-		c.JSON(200, responseData{state, message, data[0]})
+func Response(c *gin.Context, err error, data interface{}) {
+	if err == nil {
+		c.JSON(200, responseData{true, "请求成功", data})
 	} else {
-		c.JSON(200, responseData{state, message, data[0]})
+		c.JSON(200, responseData{false, err.Error(), data})
 
 	}
 }
@@ -82,4 +84,10 @@ func GetGID() string {
 	b = bytes.TrimPrefix(b, []byte("goroutine "))
 	b = b[:bytes.IndexByte(b, ' ')]
 	return string(b)
+}
+
+func GetMD5(orgStr string) string {
+	h := md5.New()
+	h.Write([]byte(orgStr))
+	return hex.EncodeToString(h.Sum(nil))
 }

@@ -1,7 +1,7 @@
 package models
 
 import (
-	"apcc_wallet/utils"
+	"apcc_wallet_api/utils"
 	"bytes"
 	"net/url"
 	"strings"
@@ -24,6 +24,11 @@ func Query(bean interface{}, results interface{}, orderBy string, sort string, w
 
 	err := getResult(results, orderBy, sort, whereSQL, args...)
 	return err
+}
+
+//Query 实体查询
+func QueryOne(results interface{}, whereSQL string, args ...interface{}) (bool, error) {
+	return getOneResult(results, whereSQL, args...)
 }
 
 //GetBean 根据实体非空字段查询单跳数据
@@ -142,6 +147,24 @@ func getResultCount(bean interface{}, pageData *utils.PageData, whereSQL string,
 	pageData.Page.PageCount = int(pageData.Page.TotalRows % pageSize64)
 
 	return nil
+}
+
+func getOneResult(results interface{}, whereSQL string, args ...interface{}) (bool, error) {
+	session, flag := utils.GetSession()
+
+	if nil != args {
+		session.Where(whereSQL, args...)
+	}
+
+	has, err := session.Get(results)
+	if flag {
+		session.Close()
+	}
+	if nil != err {
+		utils.SysLog.Error("数据库查询出错", err)
+		return has, err
+	}
+	return has, err
 }
 
 func GetSQL(pars url.Values, filedSQL map[string]string) (string, []interface{}, string, string) {

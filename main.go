@@ -1,9 +1,9 @@
 package main
 
 import (
-	"apcc_wallet/middlewares/cors"
-	"apcc_wallet/router"
-	"apcc_wallet/utils"
+	"apcc_wallet_api/middlewares/cors"
+	"apcc_wallet_api/router"
+	"apcc_wallet_api/utils"
 
 	"github.com/gin-gonic/gin"
 )

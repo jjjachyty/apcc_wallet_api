@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"fmt"
 	"os"
 	"sync"
 
@@ -134,7 +135,7 @@ func InitDB() {
 	dbcfg := GetDataBaseCfg()
 	if "mysql" == dbcfg.Type {
 
-		dataSrouceName = dbcfg.UserName + ":" + dbcfg.PassWord + "@" + dbcfg.Server + ":" + dbcfg.Port + "/" + dbcfg.SID + "?charset=utf8mb4"
+		dataSrouceName = dbcfg.UserName + ":" + dbcfg.PassWord + "@(" + dbcfg.Server + ":" + dbcfg.Port + ")/" + dbcfg.SID + "?charset=utf8mb4"
 	}
 	SysLog.Debug("driverName--", dbcfg.DriverName, "--dataSrouceName--", dataSrouceName)
 	dbEngine, err = xorm.NewEngine(dbcfg.DriverName, dataSrouceName)
@@ -155,4 +156,7 @@ func InitDB() {
 	sl := xorm.NewSimpleLogger(SysLog.Writer())
 	sl.SetLevel(core.LOG_INFO)
 	dbEngine.SetLogger(sl)
+
+	fmt.Println(dbEngine.Ping())
+	// fmt.Println(result)
 }

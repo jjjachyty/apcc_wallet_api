@@ -1,8 +1,9 @@
-package common
+package commonController
 
 import (
-	"apcc_wallet/services/com"
-	"apcc_wallet/utils"
+	"apcc_wallet_api/services/commonService"
+	"apcc_wallet_api/utils"
+	"errors"
 
 	"github.com/mojocn/base64Captcha"
 
@@ -17,13 +18,7 @@ var configD = base64Captcha.ConfigDigit{
 	CaptchaLen: 6,
 }
 
-const (
-	captchaVerifySuccess = "验证码校验成功"
-	captchaVerifyFail    = "验证码校验失败"
-	captchaGetSuccess    = "获取图片验证码成功"
-)
-
-var smsService com.SMSService
+var smsService commonService.SMSService
 
 //TermController 期限结构控制器
 type CaptchaController struct{}
@@ -37,12 +32,13 @@ func (CaptchaController) getCaption(c *gin.Context) {
 	if hasPhone {
 		captchaId, captcaInterfaceInstance = base64Captcha.GenerateCaptcha(phone, configD)
 		base64blob = base64Captcha.CaptchaWriteToBase64Encoding(captcaInterfaceInstance)
-		utils.Write(c, true, captchaGetSuccess, map[string]interface{}{"img": base64blob, "captchaId": captchaId})
+		utils.Response(c, nil, map[string]interface{}{"img": base64blob, "captchaId": captchaId})
 	}
 
 }
 
 func (CaptchaController) verificationCaption(c *gin.Context) {
+	var err = errors.New("校验验证码错误")
 	phone, hasPhone := c.GetQuery("phone")
 	value, hasDevice := c.GetQuery("value")
 	// ip := c.Request.RemoteAddr
@@ -50,15 +46,10 @@ func (CaptchaController) verificationCaption(c *gin.Context) {
 	if hasPhone && hasDevice {
 		verifyResult := base64Captcha.VerifyCaptcha(phone, value)
 		if verifyResult {
-			if err := smsService.SendSMS(phone); err == nil {
-				utils.Write(c, true, captchaVerifySuccess, verifyResult)
-			} else {
-				utils.Write(c, false, err.Error(), nil)
-			}
+			err = smsService.SendSMS(phone)
 
-			return
 		}
-		utils.Write(c, false, captchaVerifyFail, verifyResult)
+		utils.Response(c, err, verifyResult)
 
 	}
 

@@ -1,6 +1,7 @@
-package com
+package commonService
 
 import (
+	"errors"
 	"time"
 
 	"github.com/mojocn/base64Captcha/store"
@@ -15,10 +16,11 @@ func (SMSService) SendSMS(phone string) error {
 	return nil
 }
 
-func (SMSService) VerificationSMS(phone, sms string) bool {
+func (SMSService) VerificationSMS(phone, sms string) error {
 	storeSms := globalStore.Get(phone, false)
 	if storeSms == sms {
-		return true
+		globalStore.Get(phone, true)
+		return nil
 	}
-	return false
+	return errors.New("短信校验失败")
 }

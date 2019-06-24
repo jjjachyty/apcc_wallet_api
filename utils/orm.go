@@ -93,7 +93,7 @@ func GetDBEngine() *xorm.Engine {
 
 //CloseSession 释放掉Session
 func (gs *GSession) CloseSession() {
-	if !gs.IsClosed() {
+	if !gs.IsAutoClose {
 		sessionStore, ok := GSessions.Load(gs.SID)
 		if ok {
 			gsession := sessionStore.(GSession)
@@ -143,7 +143,7 @@ func InitDB() {
 		SysLog.Error("初始化数据库出错", err)
 		os.Exit(-1)
 	}
-	dbEngine.ShowSQL(true)
+	dbEngine.ShowSQL = true
 	// tbMapper := core.NewPrefixMapper(core.SnakeMapper{}, "lrm_")
 	// dbEngine.SetTableMapper(tbMapper)
 	// cqtz, err := time.LoadLocation("Asia/Chongqing")

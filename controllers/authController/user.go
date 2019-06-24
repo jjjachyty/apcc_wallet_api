@@ -1,6 +1,7 @@
 package authController
 
 import (
+	"apcc_wallet_api/middlewares/jwt"
 	"apcc_wallet_api/models/authModel"
 	"apcc_wallet_api/services/authService"
 	"apcc_wallet_api/services/commonService"
@@ -33,20 +34,20 @@ func (RegisterController) Register(c *gin.Context) {
 //LoginWithPW 用户名密码登录
 func (RegisterController) LoginWithPW(c *gin.Context) {
 	var err error
-
+	var token string
 	var user = new(authModel.User)
 	if err = c.BindJSON(user); err == nil {
 		if VerifyMobileFormat(user.Phone) && VerifyPasswdFormat(user.Password) {
-
 			err = userService.Login(user)
-			if err == nil && user.NickName == "" {
+			if user.NickName == "" {
 				err = errors.New("用户名或密码错误")
+			} else {
+				token, err = jwt.GenerateToken(*user)
 			}
 
 		}
 	}
-	fmt.Println(user)
-	utils.Response(c, err, nil)
+	utils.Response(c, err, map[string]interface{}{"User": user, "Token": token})
 }
 
 //LoginWithSMS 短信验证码登录

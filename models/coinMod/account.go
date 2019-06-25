@@ -1,4 +1,4 @@
-package coinModel
+package coinMod
 
 import "math/big"
 

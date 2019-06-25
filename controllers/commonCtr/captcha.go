@@ -1,7 +1,7 @@
-package commonController
+package commonCtr
 
 import (
-	"apcc_wallet_api/services/commonService"
+	"apcc_wallet_api/services/commonSrv"
 	"apcc_wallet_api/utils"
 	"errors"
 
@@ -18,7 +18,7 @@ var configD = base64Captcha.ConfigDigit{
 	CaptchaLen: 6,
 }
 
-var smsService commonService.SMSService
+var smsService commonSrv.SMSService
 
 //TermController 期限结构控制器
 type CaptchaController struct{}

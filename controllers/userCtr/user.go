@@ -1,10 +1,10 @@
-package authController
+package userCtr
 
 import (
 	"apcc_wallet_api/middlewares/jwt"
-	"apcc_wallet_api/models/authModel"
-	"apcc_wallet_api/services/authService"
-	"apcc_wallet_api/services/commonService"
+	"apcc_wallet_api/models/userMod"
+	"apcc_wallet_api/services/commonSrv"
+	"apcc_wallet_api/services/userSrv"
 	"apcc_wallet_api/utils"
 	"errors"
 	"fmt"
@@ -13,15 +13,15 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-var userService authService.UserService
-var smsService commonService.SMSService
+var userService userSrv.UserService
+var smsService commonSrv.SMSService
 
 //TermController 期限结构控制器
-type RegisterController struct{}
+type UserController struct{}
 
-func (RegisterController) Register(c *gin.Context) {
+func (UserController) Register(c *gin.Context) {
 	var err error
-	var user = new(authModel.User)
+	var user = new(userMod.User)
 	if err = c.BindJSON(user); err == nil {
 		if VerifyMobileFormat(user.Phone) && VerifyPasswdFormat(user.Password) {
 			err = userService.Register(user)
@@ -32,10 +32,10 @@ func (RegisterController) Register(c *gin.Context) {
 }
 
 //LoginWithPW 用户名密码登录
-func (RegisterController) LoginWithPW(c *gin.Context) {
+func (UserController) LoginWithPW(c *gin.Context) {
 	var err error
 	var token string
-	var user = new(authModel.User)
+	var user = new(userMod.User)
 	if err = c.BindJSON(user); err == nil {
 		if VerifyMobileFormat(user.Phone) && VerifyPasswdFormat(user.Password) {
 			err = userService.Login(user)
@@ -51,9 +51,9 @@ func (RegisterController) LoginWithPW(c *gin.Context) {
 }
 
 //LoginWithSMS 短信验证码登录
-func (RegisterController) LoginWithSMS(c *gin.Context) {
+func (UserController) LoginWithSMS(c *gin.Context) {
 	var err error
-	var user = new(authModel.User)
+	var user = new(userMod.User)
 	phone := c.PostForm("phone")
 	sms := c.PostForm("sms")
 	fmt.Println(phone, sms)
@@ -67,6 +67,34 @@ func (RegisterController) LoginWithSMS(c *gin.Context) {
 	fmt.Println(user)
 	utils.Response(c, err, user)
 
+}
+
+func (UserController) PayPassword(c *gin.Context) {
+	var err = errors.New("密码不能为空")
+	orgPassword := c.PostForm("orgPassword")
+	password := c.PostForm("password")
+	fmt.Println("password=", password)
+	claims := jwt.GetClaims(c)
+	var newToken string
+	if claims.HasPayPasswd {
+		if orgPassword != "" && password != "" {
+
+			//新增
+
+		} else {
+			err = errors.New("修改密码原密码和密码不能为空")
+		}
+	} else {
+		if password != "" {
+			if err = userService.Update(&userMod.User{Phone: claims.Phone, PayPasswd: utils.GetMD5(password)}); err == nil {
+				claims.HasPayPasswd = true
+				newToken, err = jwt.NewJWT().CreateToken(*claims)
+			}
+		}
+
+	}
+
+	utils.Response(c, err, gin.H{"Token": newToken})
 }
 
 func VerifyMobileFormat(mobileNum string) bool {

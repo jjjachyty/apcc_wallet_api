@@ -1,7 +1,8 @@
 package jwt
 
 import (
-	"apcc_wallet_api/models/authModel"
+	"apcc_wallet_api/models/userMod"
+	"apcc_wallet_api/utils"
 	"errors"
 	"log"
 	"net/http"
@@ -14,7 +15,7 @@ import (
 // JWTAuth 中间件，检查token
 func JWTAuth() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		token := c.Request.Header.Get("token")
+		token := c.Request.Header.Get("authorization")
 		if token == "" {
 			c.JSON(http.StatusOK, gin.H{
 				"Status":  false,
@@ -31,7 +32,7 @@ func JWTAuth() gin.HandlerFunc {
 		claims, err := j.ParseToken(token)
 		if err != nil {
 			if err == TokenExpired {
-				c.JSON(http.StatusOK, gin.H{
+				c.JSON(http.StatusUnauthorized, gin.H{
 					"Status":  false,
 					"Message": "授权已过期",
 				})
@@ -66,7 +67,8 @@ var (
 
 // 载荷，可以加一些自己需要的信息
 type CustomClaims struct {
-	Phone string `json:"phone"`
+	Phone        string `json:"phone"`
+	HasPayPasswd bool   `json:"hasPayPasswd"`
 	jwt.StandardClaims
 }
 
@@ -139,12 +141,13 @@ func (j *JWT) RefreshToken(tokenString string) (string, error) {
 }
 
 // 生成令牌
-func GenerateToken(user authModel.User) (string, error) {
+func GenerateToken(user userMod.User) (string, error) {
 	j := &JWT{
 		[]byte(SignKey),
 	}
 	claims := CustomClaims{
 		user.Phone,
+		user.HasPayPasswd,
 		jwt.StandardClaims{
 			NotBefore: int64(time.Now().Unix() - 1000), // 签名生效时间
 			ExpiresAt: int64(time.Now().Unix() + 3600), // 过期时间 一小时
@@ -152,6 +155,10 @@ func GenerateToken(user authModel.User) (string, error) {
 		},
 	}
 	return j.CreateToken(claims)
+}
+
+func GetClaims(c *gin.Context) *CustomClaims {
+	return c.MustGet("claims").(*CustomClaims)
 }
 
 // GetDataByTime 一个需要token认证的测试接口
@@ -164,4 +171,15 @@ func GetDataByTime(c *gin.Context) {
 			"Data":    claims,
 		})
 	}
+}
+
+// GetDataByTime
+func RefreshToken(c *gin.Context) {
+	var err = errors.New("authorization 不能为空")
+	token := c.Request.Header.Get("authorization")
+	if token != "" {
+		token, err = NewJWT().RefreshToken(token)
+	}
+
+	utils.Response(c, err, gin.H{"Token": token})
 }

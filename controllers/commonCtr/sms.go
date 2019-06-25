@@ -1,4 +1,4 @@
-package commonController
+package commonCtr
 
 import (
 	"apcc_wallet_api/utils"

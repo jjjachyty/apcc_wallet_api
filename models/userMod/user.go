@@ -1,7 +1,7 @@
-package authModel
+package userMod
 
 import (
-	"apcc_wallet_api/models/coinModel"
+	"apcc_wallet_api/models/coinMod"
 	"time"
 )
 
@@ -10,15 +10,16 @@ type User struct {
 	NickName        string
 	Avatar          string
 	Password        string
-	HasTradePasswd  bool `xorm:"-"` //是否有交易密码
+	HasPayPasswd    bool `xorm:"-"` //是否有交易密码
+	PayPasswd       string
 	LastLoginTime   time.Time
 	LastLoginIP     string `xorm:"varchar(25) 'last_login_ip'"`
 	LastLoginDevice string
-	Identification  int               // 账户标识/新客户、老客户
-	Level           int               //账户等级
-	State           string            //账户状态
-	IDCard          IDCard            `xorm:"extends"`
-	Accounts        coinModel.Account `xorm:"-"` //账户
+	Identification  int             // 账户标识/新客户、老客户
+	Level           int             //账户等级
+	State           string          //账户状态
+	IDCard          IDCard          `xorm:"extends"`
+	Accounts        coinMod.Account `xorm:"-"` //账户
 }
 
 type IDCard struct {

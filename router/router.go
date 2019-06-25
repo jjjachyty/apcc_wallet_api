@@ -1,8 +1,8 @@
 package router
 
 import (
-	"apcc_wallet_api/controllers/authController"
-	"apcc_wallet_api/controllers/commonController"
+	"apcc_wallet_api/controllers/commonCtr"
+	"apcc_wallet_api/controllers/userCtr"
 	"apcc_wallet_api/middlewares/jwt"
 
 	"github.com/gin-gonic/gin"
@@ -16,15 +16,22 @@ func WebRouter(router *gin.Engine) {
 
 		com := v1.Group("/com") //参数模块
 		{
-			com.Any("/sms", commonController.SMSController{}.Controller)
-			com.Any("/captcha", commonController.CaptchaController{}.Controller)
+			com.Any("/sms", commonCtr.SMSController{}.Controller)
+			com.Any("/captcha", commonCtr.CaptchaController{}.Controller)
 		}
 
 		auth := v1.Group("/auth") //参数模块
 		{
-			auth.POST("/register", authController.RegisterController{}.Register)
-			auth.POST("/loginwithpw", authController.RegisterController{}.LoginWithPW)
-			auth.POST("/loginwithsms", authController.RegisterController{}.LoginWithSMS)
+			auth.POST("/register", userCtr.UserController{}.Register)
+			auth.POST("/loginwithpw", userCtr.UserController{}.LoginWithPW)
+			auth.POST("/loginwithsms", userCtr.UserController{}.LoginWithSMS)
+			auth.POST("/refreshtoken", jwt.RefreshToken)
+
+		}
+		v1.Use(jwt.JWTAuth())
+		user := v1.Group("/user") //参数模块
+		{
+			user.POST("/paypasswd", userCtr.UserController{}.PayPassword)
 		}
 
 		test := v1.Group("/test")

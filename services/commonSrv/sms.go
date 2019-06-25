@@ -1,4 +1,4 @@
-package commonService
+package commonSrv
 
 import (
 	"errors"

@@ -32,6 +32,7 @@ func WebRouter(router *gin.Engine) {
 		user := v1.Group("/user") //参数模块
 		{
 			user.POST("/paypasswd", userCtr.UserController{}.PayPassword)
+			user.POST("/loginpasswd", userCtr.UserController{}.LoginPassword)
 		}
 
 		test := v1.Group("/test")

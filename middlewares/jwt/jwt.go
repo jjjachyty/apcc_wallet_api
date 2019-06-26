@@ -4,6 +4,7 @@ import (
 	"apcc_wallet_api/models/userMod"
 	"apcc_wallet_api/utils"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -126,13 +127,11 @@ func (j *JWT) RefreshToken(tokenString string) (string, error) {
 	jwt.TimeFunc = func() time.Time {
 		return time.Unix(0, 0)
 	}
-	token, err := jwt.ParseWithClaims(tokenString, &CustomClaims{}, func(token *jwt.Token) (interface{}, error) {
+	token, _ := jwt.ParseWithClaims(tokenString, &CustomClaims{}, func(token *jwt.Token) (interface{}, error) {
 		return j.SigningKey, nil
 	})
-	if err != nil {
-		return "", err
-	}
-	if claims, ok := token.Claims.(*CustomClaims); ok && token.Valid {
+
+	if claims, ok := token.Claims.(*CustomClaims); ok {
 		jwt.TimeFunc = time.Now
 		claims.StandardClaims.ExpiresAt = time.Now().Add(1 * time.Hour).Unix()
 		return j.CreateToken(*claims)
@@ -177,8 +176,12 @@ func GetDataByTime(c *gin.Context) {
 func RefreshToken(c *gin.Context) {
 	var err = errors.New("authorization 不能为空")
 	token := c.Request.Header.Get("authorization")
+	fmt.Println("\n")
+	fmt.Println(NewJWT().ParseToken(token))
+	fmt.Println("\n")
 	if token != "" {
 		token, err = NewJWT().RefreshToken(token)
+		fmt.Println("newtoken=", token, err)
 	}
 
 	utils.Response(c, err, gin.H{"Token": token})

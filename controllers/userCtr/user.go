@@ -24,6 +24,7 @@ func (UserController) Register(c *gin.Context) {
 	var user = new(userMod.User)
 	if err = c.BindJSON(user); err == nil {
 		if VerifyMobileFormat(user.Phone) && VerifyPasswdFormat(user.Password) {
+			user.UUID = utils.GetUUID()
 			err = userService.Register(user)
 		}
 	}
@@ -39,15 +40,23 @@ func (UserController) LoginWithPW(c *gin.Context) {
 	if err = c.BindJSON(user); err == nil {
 		if VerifyMobileFormat(user.Phone) && VerifyPasswdFormat(user.Password) {
 			err = userService.Login(user)
-			if user.NickName == "" {
-				err = errors.New("用户名或密码错误")
-			} else {
+			fmt.Println(err, "UUID", user.UUID)
+			if user.UUID != "" {
+				fmt.Println("user.PayPasswd", user.PayPasswd)
+				if user.PayPasswd != "" {
+					user.HasPayPasswd = true
+				}
 				token, err = jwt.GenerateToken(*user)
+			} else {
+				err = errors.New("用户名或密码错误")
 			}
 
+		} else {
+			err = errors.New("用户名或密码格式错误")
 		}
 	}
-	utils.Response(c, err, map[string]interface{}{"User": user, "Token": token})
+	fmt.Println(err, user)
+	utils.Response(c, err, map[string]interface{}{"User": gin.H{"UUID": user.UUID, "Phone": user.Phone, "HasPayPasswd": user.HasPayPasswd, "NickName": user.NickName, "Avatar": user.Avatar}, "Token": token})
 }
 
 //LoginWithSMS 短信验证码登录
@@ -56,16 +65,19 @@ func (UserController) LoginWithSMS(c *gin.Context) {
 	var user = new(userMod.User)
 	phone := c.PostForm("phone")
 	sms := c.PostForm("sms")
+	var token string
 	fmt.Println(phone, sms)
 	if VerifyMobileFormat(phone) {
 		if err = smsService.VerificationSMS(phone, sms); err == nil {
 			if err = userService.Get(user); err == nil {
-
+				if user.UUID != "" {
+					token, err = jwt.GenerateToken(*user)
+				}
 			}
 		}
 	}
 	fmt.Println(user)
-	utils.Response(c, err, user)
+	utils.Response(c, err, map[string]interface{}{"User": gin.H{"UUID": user.UUID, "Phone": user.Phone, "HasPayPasswd": user.HasPayPasswd, "NickName": user.NickName, "Avatar": user.Avatar}, "Token": token})
 
 }
 
@@ -73,17 +85,29 @@ func (UserController) PayPassword(c *gin.Context) {
 	var err = errors.New("密码不能为空")
 	orgPassword := c.PostForm("orgPassword")
 	password := c.PostForm("password")
-	fmt.Println("password=", password)
 	claims := jwt.GetClaims(c)
 	var newToken string
+
 	if claims.HasPayPasswd {
 		if orgPassword != "" && password != "" {
-
+			var user = new(userMod.User)
+			user.Phone = claims.Phone
+			user.PayPasswd = utils.GetMD5(orgPassword)
+			if err = userService.Get(user); err == nil {
+				fmt.Println(user.UUID)
+				if user.UUID != "" {
+					user.PayPasswd = utils.GetMD5(password)
+					err = userService.Update(user)
+				} else {
+					err = errors.New("原密码错误")
+				}
+			}
 			//新增
 
 		} else {
 			err = errors.New("修改密码原密码和密码不能为空")
 		}
+		utils.Response(c, err, true)
 	} else {
 		if password != "" {
 			if err = userService.Update(&userMod.User{Phone: claims.Phone, PayPasswd: utils.GetMD5(password)}); err == nil {
@@ -91,12 +115,26 @@ func (UserController) PayPassword(c *gin.Context) {
 				newToken, err = jwt.NewJWT().CreateToken(*claims)
 			}
 		}
-
+		utils.Response(c, err, gin.H{"Token": newToken})
 	}
 
-	utils.Response(c, err, gin.H{"Token": newToken})
 }
+func (UserController) LoginPassword(c *gin.Context) {
+	var err = errors.New("密码不能为空")
+	password := c.PostForm("password")
+	claims := jwt.GetClaims(c)
 
+	if password != "" {
+		var user = new(userMod.User)
+		user.Phone = claims.Phone
+		user.Password = utils.GetMD5(password)
+		//新增
+		err = userService.Update(user)
+	}
+
+	utils.Response(c, err, nil)
+
+}
 func VerifyMobileFormat(mobileNum string) bool {
 	regular := "^((13[0-9])|(14[5,7])|(15[0-3,5-9])|(17[0,3,5-8])|(18[0-9])|166|198|199|(147))\\d{8}$"
 
@@ -104,9 +142,9 @@ func VerifyMobileFormat(mobileNum string) bool {
 	return reg.MatchString(mobileNum)
 }
 
-func VerifyPasswdFormat(mobileNum string) bool {
-	regular := "^[a-z0-9_-]{6,16}$"
+func VerifyPasswdFormat(passwd string) bool {
+	regular := "^[0-9A-Za-z].{8,16}$"
 
 	reg := regexp.MustCompile(regular)
-	return reg.MatchString(mobileNum)
+	return reg.MatchString(passwd)
 }

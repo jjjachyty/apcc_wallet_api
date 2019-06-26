@@ -6,6 +6,7 @@ import (
 )
 
 type User struct {
+	UUID            string `xorm:"varchar(26) notnull unique pk 'uuid'"`
 	Phone           string `xorm:"varchar(25) notnull unique pk 'phone'"`
 	NickName        string
 	Avatar          string

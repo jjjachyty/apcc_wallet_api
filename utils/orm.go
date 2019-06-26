@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"fmt"
 	"os"
 	"sync"
 
@@ -157,6 +156,6 @@ func InitDB() {
 	sl.SetLevel(core.LOG_INFO)
 	dbEngine.SetLogger(sl)
 
-	fmt.Println(dbEngine.Ping())
+	dbEngine.Ping()
 	// fmt.Println(result)
 }

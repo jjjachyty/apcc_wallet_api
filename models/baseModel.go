@@ -41,6 +41,25 @@ func GetBean(beanP interface{}) error {
 	return err
 }
 
+//GetBean 根据实体非空字段查询单跳数据
+func SQLBean(beanP interface{}, sql string, args ...interface{}) error {
+	session, flag := utils.GetSession()
+	if flag {
+		session.Close()
+	}
+	_, err := session.SQL(sql, args...).Get(beanP)
+	return err
+}
+
+//GetBean 根据实体非空字段查询单跳数据
+func SQLBeans(beans interface{}, sql string, args ...interface{}) error {
+	session, flag := utils.GetSession()
+	if flag {
+		session.Close()
+	}
+	return session.SQL(sql, args...).Find(beans)
+}
+
 //Update 更新表数据
 func Update(UUID string, beanP interface{}) error {
 	session, flag := utils.GetSession()

@@ -8,6 +8,8 @@ import (
 	"apcc_wallet_api/utils"
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"mime/multipart"
 	"regexp"
 
 	"github.com/gin-gonic/gin"
@@ -135,6 +137,28 @@ func (UserController) LoginPassword(c *gin.Context) {
 	utils.Response(c, err, nil)
 
 }
+
+func (UserController) Profile(c *gin.Context) {
+	var err error
+	var fh *multipart.FileHeader
+	var file multipart.File
+	var imageBytes []byte
+
+	nickName := c.PostForm("nickName")
+	claims := jwt.GetClaims(c)
+	if fh, _ = c.FormFile("avatar"); fh != nil {
+		if file, err = fh.Open(); err == nil {
+			defer file.Close()
+			imageBytes, err = ioutil.ReadAll(file)
+			err = commonSrv.UploadImage(claims.UUID, imageBytes)
+		}
+	}
+	if err == nil && nickName != "" {
+		err = userService.Update(&userMod.User{UUID: claims.UUID, Avatar: claims.UUID, NickName: nickName})
+	}
+	utils.Response(c, err, nil)
+}
+
 func VerifyMobileFormat(mobileNum string) bool {
 	regular := "^((13[0-9])|(14[5,7])|(15[0-3,5-9])|(17[0,3,5-8])|(18[0-9])|166|198|199|(147))\\d{8}$"
 

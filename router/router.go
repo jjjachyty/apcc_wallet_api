@@ -18,6 +18,7 @@ func WebRouter(router *gin.Engine) {
 		{
 			com.Any("/sms", commonCtr.SMSController{}.Controller)
 			com.Any("/captcha", commonCtr.CaptchaController{}.Controller)
+			com.Any("/version", commonCtr.GetMaxVersion)
 		}
 
 		auth := v1.Group("/auth") //参数模块
@@ -33,6 +34,8 @@ func WebRouter(router *gin.Engine) {
 		{
 			user.POST("/paypasswd", userCtr.UserController{}.PayPassword)
 			user.POST("/loginpasswd", userCtr.UserController{}.LoginPassword)
+			user.POST("/profile", userCtr.UserController{}.Profile)
+
 		}
 
 		test := v1.Group("/test")

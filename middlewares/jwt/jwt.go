@@ -68,6 +68,7 @@ var (
 
 // 载荷，可以加一些自己需要的信息
 type CustomClaims struct {
+	UUID         string `json:"uuid"`
 	Phone        string `json:"phone"`
 	HasPayPasswd bool   `json:"hasPayPasswd"`
 	jwt.StandardClaims
@@ -145,6 +146,7 @@ func GenerateToken(user userMod.User) (string, error) {
 		[]byte(SignKey),
 	}
 	claims := CustomClaims{
+		user.UUID,
 		user.Phone,
 		user.HasPayPasswd,
 		jwt.StandardClaims{

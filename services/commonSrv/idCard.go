@@ -1,6 +1,7 @@
 package commonSrv
 
 import (
+	"apcc_wallet_api/models/userMod"
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -11,50 +12,32 @@ import (
 )
 
 type response struct {
-	ImageId   string
-	RequestId string
-	Cards     []card
-}
-
-type card struct {
-	Gender       string
-	Name         string
-	IdCardNumber string
-	Birthday     string
-	Race         string
-	Address      string
-	// Legality": {
-	// 	"Edited": 0.001,
-	// 	"Photocopy": 0.0,
-	// 	"ID Photo": 0.502,
-	// 	"Screen": 0.496,
-	// 	"Temporary ID Photo": 0.0
-	// },
-	Type      string
-	Side      string
-	IssuedBy  string
-	ValidDate string
+	ImageId      string
+	RequestId    string
+	Cards        []userMod.Card
+	TimeUsed     int
+	ErrorMessage string `json:"error_message"`
 }
 
 var idcard_url = "https://api-cn.faceplusplus.com/cardpp/v1/ocridcard"
 var api_key = "HwdG52YWaf8tgX-FNwyHY68jKcROhjx7"
 var api_secret = "o00516a7fjOAP3CoofuzSGy60jxPXJcf"
 
-func IDCadrPostRecognition(imageFile multipart.File) (*card, error) {
-	var cd = new(card)
+func IDCadrPostRecognition(imageFile multipart.File) (*response, error) {
+	var ret = new(response)
 	bodyBuf := &bytes.Buffer{}
 	bodyWriter := multipart.NewWriter(bodyBuf)
 	bodyWriter.WriteField("api_key", api_key)
 	bodyWriter.WriteField("api_secret", api_secret)
 	//关键的一步操作
-	fileWriter, err := bodyWriter.CreateFormFile("image_file", "image_file")
+	imageFileWriter, err := bodyWriter.CreateFormFile("image_file", "front")
 	if err != nil {
 		fmt.Println("error writing to buffer")
 		return nil, err
 	}
 
 	//iocopy
-	_, err = io.Copy(fileWriter, imageFile)
+	_, err = io.Copy(imageFileWriter, imageFile)
 	if err != nil {
 		return nil, err
 	}
@@ -67,12 +50,10 @@ func IDCadrPostRecognition(imageFile multipart.File) (*card, error) {
 		return nil, err
 	}
 	defer resp.Body.Close()
-	resp_body, err := ioutil.ReadAll(resp.Body)
+	respBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println(resp.Status)
-	fmt.Println(string(resp_body))
-	err = json.Unmarshal(resp_body, cd)
-	return cd, err
+	err = json.Unmarshal(respBody, ret)
+	return ret, err
 }

@@ -19,13 +19,27 @@ type User struct {
 	Identification  int             // 账户标识/新客户、老客户
 	Level           int             //账户等级
 	State           string          //账户状态
-	IDCard          IDCard          `xorm:"extends"`
+	IDCardAuth      bool            `xorm:"-"`
+	IDCard          Card            `xorm:"extends"`
 	Accounts        coinMod.Account `xorm:"-"` //账户
 }
 
-type IDCard struct {
-	IDCard         string    `xorm:"varchar(25) 'id_card'"` //身份证号
-	Sex            string    //性别
-	Birthday       time.Time //生日
-	ExpirationDate time.Time //失效日期
+type Card struct {
+	Gender       string `xorm:"'id_gender'"`
+	Name         string `xorm:"'id_name'"`
+	IDCardNumber string `json:"id_card_number" xorm:"'id_card_number'"`
+	Birthday     string `xorm:"'id_birthday'"`
+	Race         string `xorm:"'id_race'"`
+	Address      string `xorm:"'id_address'"`
+	// Legality": {
+	// 	"Edited": 0.001,
+	// 	"Photocopy": 0.0,
+	// 	"ID Photo": 0.502,
+	// 	"Screen": 0.496,
+	// 	"Temporary ID Photo": 0.0
+	// },
+	// Type      int
+	// Side      string
+	IssuedBy  string `json:"issued_by" xorm:"'id_issued_by'"`
+	ValidDate string `json:"valid_date" xorm:"'id_valid_date'"`
 }

@@ -35,9 +35,9 @@ func WebRouter(router *gin.Engine) {
 			user.POST("/paypasswd", userCtr.UserController{}.PayPassword)
 			user.POST("/loginpasswd", userCtr.UserController{}.LoginPassword)
 			user.POST("/profile", userCtr.UserController{}.Profile)
-			user.POST("/idcard", userCtr.UserController{}.IDCardRecognition)
+			user.POST("/idcard", userCtr.UserController{}.IDCard)
 		}
-
+		com.POST("/idcardrecognition", commonCtr.IDCardRecognition)
 		test := v1.Group("/test")
 		{
 			test.Use(jwt.JWTAuth())

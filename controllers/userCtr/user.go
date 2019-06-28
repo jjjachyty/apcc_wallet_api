@@ -48,6 +48,9 @@ func (UserController) LoginWithPW(c *gin.Context) {
 				if user.PayPasswd != "" {
 					user.HasPayPasswd = true
 				}
+				if user.IDCard.IDCardNumber != "" {
+					user.IDCardAuth = true
+				}
 				token, err = jwt.GenerateToken(*user)
 			} else {
 				err = errors.New("用户名或密码错误")
@@ -58,7 +61,7 @@ func (UserController) LoginWithPW(c *gin.Context) {
 		}
 	}
 	fmt.Println(err, user)
-	utils.Response(c, err, map[string]interface{}{"User": gin.H{"UUID": user.UUID, "Phone": user.Phone, "HasPayPasswd": user.HasPayPasswd, "NickName": user.NickName, "Avatar": user.Avatar}, "Token": token})
+	utils.Response(c, err, map[string]interface{}{"User": gin.H{"IDCardAuth": user.IDCardAuth, "UUID": user.UUID, "Phone": user.Phone, "HasPayPasswd": user.HasPayPasswd, "NickName": user.NickName, "Avatar": user.Avatar}, "Token": token})
 }
 
 //LoginWithSMS 短信验证码登录
@@ -73,13 +76,20 @@ func (UserController) LoginWithSMS(c *gin.Context) {
 		if err = smsService.VerificationSMS(phone, sms); err == nil {
 			if err = userService.Get(user); err == nil {
 				if user.UUID != "" {
+					if user.PayPasswd != "" {
+						user.HasPayPasswd = true
+					}
+					if user.IDCard.IDCardNumber != "" {
+						user.IDCardAuth = true
+					}
+
 					token, err = jwt.GenerateToken(*user)
 				}
 			}
 		}
 	}
 	fmt.Println(user)
-	utils.Response(c, err, map[string]interface{}{"User": gin.H{"UUID": user.UUID, "Phone": user.Phone, "HasPayPasswd": user.HasPayPasswd, "NickName": user.NickName, "Avatar": user.Avatar}, "Token": token})
+	utils.Response(c, err, map[string]interface{}{"User": gin.H{"IDCardAuth": user.IDCardAuth, "UUID": user.UUID, "Phone": user.Phone, "HasPayPasswd": user.HasPayPasswd, "NickName": user.NickName, "Avatar": user.Avatar}, "Token": token})
 
 }
 
@@ -159,27 +169,19 @@ func (UserController) Profile(c *gin.Context) {
 	utils.Response(c, err, nil)
 }
 
-// 身份识别
-func (UserController) IDCardRecognition(c *gin.Context) {
-	fh1, err1 := c.FormFile("card1")
-	fh2, err2 := c.FormFile("card2")
-	if err1 == nil && err2 == nil {
-		fmt.Println("IDCardRecognition-===============", fh1.Filename, fh2.Filename)
-		file1, err1 := fh1.Open()
+func (UserController) IDCard(c *gin.Context) {
+	var err error
+	card := new(userMod.Card)
+	if err = c.BindJSON(card); err == nil {
+		if card.Name != "" && card.IDCardNumber != "" {
+			err = userService.Update(&userMod.User{UUID: jwt.GetClaims(c).UUID, IDCard: *card})
 
-		file2, err2 := fh2.Open()
-		if err1 == nil && err2 == nil {
-			defer func() {
-
-				file1.Close()
-				file2.Close()
-			}()
-			card, err := commonSrv.IDCadrPostRecognition(file1)
-			fmt.Println(err, card)
-			// commonSrv.IDCadrPostRecognition(file2)
+		} else {
+			utils.Response(c, errors.New("参数错误"), nil)
 		}
-
 	}
+	fmt.Println(err)
+	utils.Response(c, err, nil)
 }
 
 func VerifyMobileFormat(mobileNum string) bool {

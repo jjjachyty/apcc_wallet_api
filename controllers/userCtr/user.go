@@ -159,6 +159,29 @@ func (UserController) Profile(c *gin.Context) {
 	utils.Response(c, err, nil)
 }
 
+// 身份识别
+func (UserController) IDCardRecognition(c *gin.Context) {
+	fh1, err1 := c.FormFile("card1")
+	fh2, err2 := c.FormFile("card2")
+	if err1 == nil && err2 == nil {
+		fmt.Println("IDCardRecognition-===============", fh1.Filename, fh2.Filename)
+		file1, err1 := fh1.Open()
+
+		file2, err2 := fh2.Open()
+		if err1 == nil && err2 == nil {
+			defer func() {
+
+				file1.Close()
+				file2.Close()
+			}()
+			card, err := commonSrv.IDCadrPostRecognition(file1)
+			fmt.Println(err, card)
+			// commonSrv.IDCadrPostRecognition(file2)
+		}
+
+	}
+}
+
 func VerifyMobileFormat(mobileNum string) bool {
 	regular := "^((13[0-9])|(14[5,7])|(15[0-3,5-9])|(17[0,3,5-8])|(18[0-9])|166|198|199|(147))\\d{8}$"
 

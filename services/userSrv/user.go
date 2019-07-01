@@ -31,3 +31,13 @@ func (UserService) Update(user *userMod.User) error {
 	return models.UpdateBean(user, userMod.User{Phone: user.Phone})
 
 }
+
+func (this UserService) CheckPayPasswd(user *userMod.User) (bool, error) {
+	var err error
+	if err = this.Get(user); err == nil {
+		if user.Phone != "" {
+			return true, nil
+		}
+	}
+	return false, err
+}

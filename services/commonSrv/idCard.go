@@ -14,7 +14,7 @@ import (
 type response struct {
 	ImageId      string
 	RequestId    string
-	Cards        []userMod.Card
+	Cards        []userMod.IdCard
 	TimeUsed     int
 	ErrorMessage string `json:"error_message"`
 }

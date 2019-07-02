@@ -1,45 +1,52 @@
 package walletSrv
 
 import (
-	"github.com/tyler-smith/go-bip32"
+	"apcc_wallet_api/utils"
 	"fmt"
 
-	hdwallet "github.com/wemeetagain/go-hdwallet"
+	"github.com/btcsuite/btcd/wire"
+
+	"github.com/btcsuite/btcd/chaincfg"
+
+	"github.com/btcsuite/btcutil/hdkeychain"
+	"github.com/ethereum/go-ethereum/crypto"
+
+	bip32 "github.com/tyler-smith/go-bip32"
 )
 
 const (
-	mnemonic  = "拒 计 精 荷 酸 压 悲 尤 针 过 凡 纪 东 谓 嫩 哭 敢 韦 洞 穆 叛 柳 趋 瑞"
-	passwd    = "123456"
-	masterkey = "xprv9s21ZrQH143K2BHJXFAdkZhaUsc1qfuTnd1RdBQFLm8oxx5uD9NAQem3H9QpKmqFMvHGr1ypjSHFmPBWHcev7XSydBbBu214NzNcywvDTpJ"
-	masterpub = "xpub661MyMwAqRbcEfMmdGhe7heK2uSWF8dK9qw2RZoru6fnqkR3kggQxT5X8RaF9eJyn1uNVZSmXo8BqYfCn1syaZq5UsVAMRuTVZGsttfeHjz"
+	// mnemonic  = "拒 计 精 荷 酸 压 悲 尤 针 过 凡 纪 东 谓 嫩 哭 敢 韦 洞 穆 叛 柳 趋 瑞"
+	// passwd    = "123456"
+	// masterkey = "xprv9s21ZrQH143K2BHJXFAdkZhaUsc1qfuTnd1RdBQFLm8oxx5uD9NAQem3H9QpKmqFMvHGr1ypjSHFmPBWHcev7XSydBbBu214NzNcywvDTpJ"
+	accountBtcPub = "xpub6EELkV1BFXMvWtH7XsbGTnojnd1CEFgJecSjo5qs2s7Q88yDjBtn9Rc6xTTchWpYYNtYBPJFNny1UzHQCCEX9X2ZzdxjqZCMWWo69MNfQ8P"
+	accountEthPub = "xpub6FJMotUfHzsuxkB7jLZ65XMjDcWfpYcB2LgGmT2buLBorDXcknGdVzWAcyMmYu49Kv7sEcUbh4XW83giKx6e6J2WfhXhCBF5PZowEvARVQR"
 )
 
-func GetAddress(acountID string) {
+//获取BTC地址
+func GetBtcAddress(acountID uint32) (string, error) {
+	key, err := bip32.B58Deserialize(accountBtcPub)
+	if err == nil {
+		if child, err := key.NewChildKey(acountID); err == nil {
+			// fmt.Println(utils.GetAddress(child.Key))
 
+			ext, _ := hdkeychain.NewKeyFromString(child.String())
+			address, _ := ext.Address(&chaincfg.Params{Net: wire.MainNet})
+			fmt.Println(address.EncodeAddress())
+		}
+	}
+	return "", err
 }
 
-func getMasterPub() {
-   
-	
-	// Generate a random 256 bit seed
-	seed, err := hdwallet.GenSeed(256)
+//获取ETH地址
+func GetEthAddress(acountID uint32) (string, error) {
+	key, err := bip32.B58Deserialize(accountEthPub)
+	if err == nil {
+		if child, err := key.NewChildKey(acountID); err == nil {
 
-	// Create a master private key
-	masterprv := hdwallet.MasterKey(seed)
-
-	// Convert a private key to public key
-	masterpub := masterprv.Pub()
-	masterpub.
-	// Generate new child key based on private or public key
-	childprv, err := masterprv.Child(0)
-	childpub, err := masterpub.Child(0)
-	fmt.Println(childprv, childpub)
-	// Create bitcoin address from public key
-	address := childpub.Address()
-	fmt.Println(address)
-	// Convenience string -> string Child and ToAddress functions
-	walletstring := childpub.String()
-	childstring, err := hdwallet.StringChild(walletstring, 0)
-	childaddress, err := hdwallet.StringAddress(childstring)
-	fmt.Println(childaddress, err)
+			pubKey := utils.ExpandPublicKey(child.Key)
+			fmt.Printf("%x", child.ChildNumber,)
+			return crypto.PubkeyToAddress(*pubKey).Hex(), err
+		}
+	}
+	return "", err
 }

@@ -41,3 +41,9 @@ func (this UserService) CheckPayPasswd(user *userMod.User) (bool, error) {
 	}
 	return false, err
 }
+
+func (UserService) UpdateIDCard(card *userMod.IdCard) error {
+
+	return models.UpdateBean(card, userMod.IdCard{UserID: card.UserID})
+
+}

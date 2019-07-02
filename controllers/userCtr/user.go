@@ -28,6 +28,7 @@ func (UserController) Register(c *gin.Context) {
 		if VerifyMobileFormat(user.Phone) && VerifyPasswdFormat(user.Password) {
 			user.UUID = utils.GetUUID()
 			err = userService.Register(user)
+			fmt.Println("user.AccountID=", user.AccountID)
 		}
 	}
 	utils.Response(c, err, nil)
@@ -48,9 +49,7 @@ func (UserController) LoginWithPW(c *gin.Context) {
 				if user.PayPasswd != "" {
 					user.HasPayPasswd = true
 				}
-				if user.IDCard.IDCardNumber != "" {
-					user.IDCardAuth = true
-				}
+
 				token, err = jwt.GenerateToken(*user)
 			} else {
 				err = errors.New("用户名或密码错误")
@@ -78,9 +77,6 @@ func (UserController) LoginWithSMS(c *gin.Context) {
 				if user.UUID != "" {
 					if user.PayPasswd != "" {
 						user.HasPayPasswd = true
-					}
-					if user.IDCard.IDCardNumber != "" {
-						user.IDCardAuth = true
 					}
 
 					token, err = jwt.GenerateToken(*user)
@@ -171,10 +167,11 @@ func (UserController) Profile(c *gin.Context) {
 
 func (UserController) IDCard(c *gin.Context) {
 	var err error
-	card := new(userMod.Card)
+	card := new(userMod.IdCard)
 	if err = c.BindJSON(card); err == nil {
 		if card.Name != "" && card.IDCardNumber != "" {
-			err = userService.Update(&userMod.User{UUID: jwt.GetClaims(c).UUID, IDCard: *card})
+			card.UserID = jwt.GetClaims(c).UUID
+			err = userService.UpdateIDCard(card)
 
 		} else {
 			utils.Response(c, errors.New("参数错误"), nil)

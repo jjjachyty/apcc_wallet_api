@@ -12,7 +12,7 @@ const (
 )
 
 var (
-	assetsSQL = "select a.*,b.name_en,b.name_cn,b.symbol FROM asset a LEFT JOIN dim_coin b on  a.symbol = b.symbol where a.uuid=?"
+	assetsSQL = "select a.*,b.name_en ,b.name_cn FROM asset a LEFT JOIN dim_coin b on  a.symbol = b.symbol where a.uuid=?"
 )
 
 type AssetService struct{}

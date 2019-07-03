@@ -12,3 +12,7 @@ type DimCoin struct {
 	State    string
 	Synopsis string
 }
+
+func (DimCoin) TableName() string {
+	return "dim_coin"
+}

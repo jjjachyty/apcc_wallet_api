@@ -9,7 +9,7 @@ import (
 )
 
 var CoinPrice = make(map[string]float64)
-var 
+
 var apiURL = "https://www.hqz.com/api/index/get_index_refresh/?type=&sortby=&sort=desc&filter=&p=1"
 
 func init() {

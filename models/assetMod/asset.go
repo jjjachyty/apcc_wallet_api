@@ -8,6 +8,9 @@ type Asset struct {
 	Address        string
 	Blance         string
 	FreezingBlance string
-	PriceCny       float64 `xorm:"-"`
-	dimMod.DimCoin
+	dimMod.DimCoin `xorm:"extends"`
+}
+
+func (Asset) TableName() string {
+	return "asset"
 }

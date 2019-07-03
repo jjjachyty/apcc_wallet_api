@@ -42,6 +42,16 @@ func GetBean(beanP interface{}) error {
 }
 
 //GetBean 根据实体非空字段查询单跳数据
+func GetBeans(beans interface{}, condBean interface{}) error {
+	session, flag := utils.GetSession()
+	if flag {
+		session.Close()
+	}
+
+	return session.Find(beans, condBean)
+}
+
+//GetBean 根据实体非空字段查询单跳数据
 func SQLBean(beanP interface{}, sql string, args ...interface{}) error {
 	session, flag := utils.GetSession()
 	if flag {
@@ -79,9 +89,9 @@ func UpdateBean(beanP interface{}, whereBean interface{}) error {
 	}
 	return err
 }
-func Create(beanP interface{}) error {
+func Create(bean interface{}) error {
 	session, flag := utils.GetSession()
-	_, err := session.Insert(beanP)
+	_, err := session.Insert(bean)
 	if flag {
 		session.Close()
 	}

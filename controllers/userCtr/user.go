@@ -2,9 +2,12 @@ package userCtr
 
 import (
 	"apcc_wallet_api/middlewares/jwt"
+	"apcc_wallet_api/models/assetMod"
 	"apcc_wallet_api/models/userMod"
+	"apcc_wallet_api/services/assetSrv"
 	"apcc_wallet_api/services/commonSrv"
 	"apcc_wallet_api/services/userSrv"
+	"apcc_wallet_api/services/walletSrv"
 	"apcc_wallet_api/utils"
 	"errors"
 	"fmt"
@@ -17,6 +20,7 @@ import (
 
 var userService userSrv.UserService
 var smsService commonSrv.SMSService
+var assetsService assetSrv.AssetService
 
 //TermController 期限结构控制器
 type UserController struct{}
@@ -24,13 +28,22 @@ type UserController struct{}
 func (UserController) Register(c *gin.Context) {
 	var err error
 	var user = new(userMod.User)
+	var assets []assetMod.Asset
 	if err = c.BindJSON(user); err == nil {
+
 		if VerifyMobileFormat(user.Phone) && VerifyPasswdFormat(user.Password) {
+			session := utils.OpenSession()
+			defer session.Close()
 			user.UUID = utils.GetUUID()
-			err = userService.Register(user)
-			fmt.Println("user.AccountID=", user.AccountID)
+			if err = userService.Register(user); err == nil {
+				if assets, err = walletSrv.GetAddress(user.UUID, uint32(user.AccountID)); err == nil {
+					err = assetsService.Create(assets)
+				}
+			}
+
 		}
 	}
+	fmt.Println(err)
 	utils.Response(c, err, nil)
 
 }

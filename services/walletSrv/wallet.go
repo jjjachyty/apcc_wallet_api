@@ -1,6 +1,8 @@
 package walletSrv
 
 import (
+	"apcc_wallet_api/models/assetMod"
+	"apcc_wallet_api/services/assetSrv"
 	"apcc_wallet_api/utils"
 	"fmt"
 
@@ -31,7 +33,7 @@ func GetBtcAddress(acountID uint32) (string, error) {
 
 			ext, _ := hdkeychain.NewKeyFromString(child.String())
 			address, _ := ext.Address(&chaincfg.Params{Net: wire.MainNet})
-			fmt.Println(address.EncodeAddress())
+			return address.EncodeAddress(), err
 		}
 	}
 	return "", err
@@ -44,9 +46,24 @@ func GetEthAddress(acountID uint32) (string, error) {
 		if child, err := key.NewChildKey(acountID); err == nil {
 
 			pubKey := utils.ExpandPublicKey(child.Key)
-			fmt.Printf("%x", child.ChildNumber,)
+			fmt.Printf("%x", child.ChildNumber)
 			return crypto.PubkeyToAddress(*pubKey).Hex(), err
 		}
 	}
 	return "", err
+}
+
+func GetAddress(userid string, acountID uint32) ([]assetMod.Asset, error) {
+	var assets = make([]assetMod.Asset, 2)
+	var usdtAddr, mhcAddr string
+	var err error
+	if usdtAddr, err = GetBtcAddress(acountID); err == nil {
+
+		assets[0] = assetMod.Asset{UUID: userid, Symbol: assetSrv.USDT_COIN_SYMBOL, Address: usdtAddr}
+
+	}
+	if mhcAddr, err = GetEthAddress(acountID); err == nil {
+		assets[1] = assetMod.Asset{UUID: userid, Symbol: assetSrv.HMC_COIN_SYMBOL, Address: mhcAddr}
+	}
+	return assets, err
 }

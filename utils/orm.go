@@ -3,12 +3,12 @@ package utils
 import (
 	"os"
 	"sync"
+	"time"
 
 	// "time"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/go-xorm/xorm"
-	"xorm.io/core"
 )
 
 //DBEngine var 数据库引擎
@@ -145,17 +145,17 @@ func InitDB() {
 	dbEngine.ShowSQL(true)
 	// tbMapper := core.NewPrefixMapper(core.SnakeMapper{}, "lrm_")
 	// dbEngine.SetTableMapper(tbMapper)
-	// cqtz, err := time.LoadLocation("Asia/Chongqing")
-	// if nil != err {
-	// 	SysLog.Error("设置时区Asia/Chongqing错误", err)
-	// }
-	// dbEngine.SetTZDatabase(cqtz)
-	// dbEngine.SetTZLocation(cqtz)
+	cqtz, err := time.LoadLocation("Asia/Chongqing")
+	if nil != err {
+		SysLog.Error("设置时区Asia/Chongqing错误", err)
+	}
+	dbEngine.SetTZDatabase(cqtz)
+	dbEngine.SetTZLocation(cqtz)
 
-	sl := xorm.NewSimpleLogger(SysLog.Writer())
-	sl.SetLevel(core.LOG_INFO)
-	dbEngine.SetLogger(sl)
+	// sl := xorm.NewSimpleLogger(SysLog.Writer())
+	// sl.SetLevel(core.LOG_INFO)
+	// dbEngine.SetLogger(sl)
 
-	dbEngine.Ping()
+	// dbEngine.Ping()
 	// fmt.Println(result)
 }

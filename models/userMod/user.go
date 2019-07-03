@@ -5,22 +5,22 @@ import (
 )
 
 type User struct {
-	UUID            string `xorm:"varchar(26) notnull unique pk 'uuid'"`
-	AccountID       string `xorm:"int(11)  autoincr 'account_id'"`
-	Phone           string `xorm:"varchar(25) notnull unique pk 'phone'"`
-	NickName        string
-	Avatar          string
-	Password        string
-	HasPayPasswd    bool `xorm:"-"` //是否有交易密码
-	PayPasswd       string
-	LastLoginTime   time.Time
+	UUID         string `xorm:"varchar(26) notnull unique pk 'uuid'"`
+	AccountID    int    `xorm:"int(11)  autoincr 'account_id'"`
+	Phone        string `xorm:"varchar(25) notnull unique pk 'phone'"`
+	NickName     string
+	Avatar       string
+	Password     string
+	HasPayPasswd bool `xorm:"-"` //是否有交易密码
+	PayPasswd    string
+	// CreateAt        time.Time
+	// LastLoginTime   time.Time
 	LastLoginIP     string `xorm:"varchar(25) 'last_login_ip'"`
 	LastLoginDevice string
 	Identification  int    // 账户标识/新客户、老客户
 	Level           int    //账户等级
 	State           string //账户状态
 	IDCardAuth      int    `xorm:"'id_card_auth'"`
-	// Accounts        coinMod.Account `xorm:"-"` //账户
 }
 
 type IdCard struct {

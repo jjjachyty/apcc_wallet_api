@@ -1,6 +1,7 @@
 package router
 
 import (
+	"apcc_wallet_api/controllers/assetCtl"
 	"apcc_wallet_api/controllers/commonCtr"
 	"apcc_wallet_api/controllers/userCtr"
 	"apcc_wallet_api/middlewares/jwt"
@@ -36,6 +37,7 @@ func WebRouter(router *gin.Engine) {
 			user.POST("/loginpasswd", userCtr.UserController{}.LoginPassword)
 			user.POST("/profile", userCtr.UserController{}.Profile)
 			user.POST("/idcard", userCtr.UserController{}.IDCard)
+			user.GET("/assets", assetCtl.AssetController{}.List)
 		}
 		com.POST("/idcardrecognition", commonCtr.IDCardRecognition)
 		test := v1.Group("/test")

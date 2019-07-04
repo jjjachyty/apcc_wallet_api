@@ -13,6 +13,7 @@ import (
 
 //DBEngine var 数据库引擎
 var dbEngine *xorm.Engine
+
 var waitgroup sync.WaitGroup
 
 //GSession 全局Session
@@ -125,6 +126,12 @@ func CloseSessionGID(gid string) {
 		GSessions.Delete(gid)
 		SysLog.Debug("根据gid方法关闭session-关闭已存在的Session")
 	}
+}
+
+func Session(fc func(sessin *xorm.Session) error) error {
+	session := dbEngine.NewSession()
+	defer session.Close()
+	return fc(session)
 }
 
 //初始化数据库引擎

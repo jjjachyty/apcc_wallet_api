@@ -10,6 +10,7 @@ import (
 	"apcc_wallet_api/utils"
 	"errors"
 	"fmt"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -39,17 +40,87 @@ func (AssetController) Transfer(c *gin.Context) {
 	utils.Response(c, err, nil)
 }
 
+//获取兑换币种
+func (AssetController) ExchangeAssets(c *gin.Context) {
+	var err error
+	var assets []assetMod.Asset
+	mainCoin, hasMainCoin := c.GetQuery("mainCoin")
+	exchangeCoin, hasExchangeCoin := c.GetQuery("exchangeCoin")
+	if hasMainCoin && hasExchangeCoin {
+		claims := jwt.GetClaims(c)
+		if assets, err = assetService.FindExchange(claims.UUID, mainCoin, exchangeCoin); err == nil {
+			fmt.Println(assets[0].Symbol, mainCoin)
+			if assets[0].Symbol == mainCoin { //排序
+				assets[0], assets[1] = assets[1], assets[0]
+			}
+		}
+	}
+	utils.Response(c, err, assets)
+}
+
+func (AssetController) Exchange(c *gin.Context) {
+	var err error
+
+	var amountF float64
+	var assets []assetMod.Asset
+
+	mainCoin := c.PostForm("mainCoin")
+	exchangeCoin := c.PostForm("exchangeCoin")
+	amount := c.PostForm("amount")
+	if mainCoin != "" && exchangeCoin != "" && amount != "" {
+		claims := jwt.GetClaims(c)
+
+		// if rate, err = commonSrv.GetExchange(mainCoin, exchangeCoin); err != nil {
+		if assets, err = assetService.FindExchange(claims.UUID, mainCoin, exchangeCoin); err == nil && len(assets) == 2 {
+			var from = assets[0]
+			var to = assets[1]
+
+			if from.Symbol == mainCoin {
+				from = assets[1]
+				to = assets[0]
+			}
+			if amountF, err = strconv.ParseFloat(amount, 64); err == nil {
+				if from.Blance > amountF {
+					assetService.TransferBlance(from, to, amountF)
+				} else {
+					err = errors.New("余额不足")
+				}
+			} else {
+				err = errors.New("转出金额格式错误")
+			}
+
+		}
+		// }
+	}
+	utils.Response(c, err, assets)
+}
+
 func (AssetController) List(c *gin.Context) {
 	var err error
 	var assets []assetMod.Asset
 	claims := jwt.GetClaims(c)
 	if assets, err = assetService.Find(claims.UUID); err == nil {
 		fmt.Println(assets)
-		for _, asset := range assets {
-			fmt.Println("111111111", asset.NameEn)
-			asset.PriceCny = commonSrv.CoinPrice[asset.NameEn]
+		for i, asset := range assets {
+
+			assets[i].PriceCny = commonSrv.CoinPrice[asset.NameEn]
 		}
 	}
 
 	utils.Response(c, err, assets)
+}
+
+func (AssetController) Free(c *gin.Context) {
+	var err error
+	var free float64
+	var ok bool
+	coin, ok := c.GetQuery("coin")
+	if ok {
+		if free, ok = commonSrv.CoinFreee[coin]; !ok {
+			err = errors.New("未找到币种的手续费")
+		}
+	} else {
+		err = errors.New("缺失币种参数")
+	}
+	utils.Response(c, err, free)
 }

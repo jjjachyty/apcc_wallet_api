@@ -4,6 +4,10 @@ import (
 	"apcc_wallet_api/models"
 	"apcc_wallet_api/models/assetMod"
 	"apcc_wallet_api/services/userSrv"
+	"apcc_wallet_api/utils"
+	"fmt"
+
+	"github.com/go-xorm/xorm"
 )
 
 const (
@@ -12,7 +16,8 @@ const (
 )
 
 var (
-	assetsSQL = "select a.*,b.name_en ,b.name_cn FROM asset a LEFT JOIN dim_coin b on  a.symbol = b.symbol where a.uuid=?"
+	assetsSQL   = "select a.*,b.name_en ,b.name_cn,b.price_cny,b.price_usd FROM asset a LEFT JOIN dim_coin b on  a.symbol = b.symbol where a.uuid=?"
+	exchangeSQL = "select a.*,b.name_en ,b.name_cn,b.price_cny,b.price_usd FROM asset a LEFT JOIN dim_coin b on  a.symbol = b.symbol where a.uuid=? and (a.symbol=? Or a.symbol = ?)"
 )
 
 type AssetService struct{}
@@ -32,7 +37,40 @@ func (AssetService) Create(assets []assetMod.Asset) error {
 	return models.Create(&assets)
 }
 
+func (AssetService) Get(assets *assetMod.Asset) error {
+	return models.GetBean(assets)
+}
+
 func (AssetService) Find(uuid string) ([]assetMod.Asset, error) {
 	var assets = make([]assetMod.Asset, 0)
 	return assets, models.SQLBeans(&assets, assetsSQL, uuid)
+}
+
+func (AssetService) FindExchange(uuid string, mainCoin string, exchangeCoin string) ([]assetMod.Asset, error) {
+	var assets = make([]assetMod.Asset, 0)
+	return assets, models.SQLBeans(&assets, exchangeSQL, uuid, mainCoin, exchangeCoin)
+}
+
+func (AssetService) TransferBlance(from, to assetMod.Asset, transferAmount float64) error {
+	var exchangeRate = from.PriceCny / to.PriceCny
+	var toAmount = exchangeRate * transferAmount
+	return utils.Session(func(session *xorm.Session) (err error) {
+		if err = session.Begin(); err == nil {
+			if _, err = session.Exec("UPDATE asset a set a.blance = ? where a.uuid = ? and a.symbol=? and a.blance=? ", from.Blance-transferAmount, from.UUID, from.Symbol, from.Blance); err == nil {
+				if _, err = session.Exec("UPDATE asset a set a.blance = ? where a.uuid = ? and a.symbol=? and a.blance=? ", to.Blance+toAmount, to.UUID, to.Symbol, to.Blance); err == nil {
+					_, err = session.Insert(assetMod.AssetLog{UUID: from.UUID, From: from.Symbol, FromPreblance: from.Blance, FromBlance: from.Blance - transferAmount, FromPriceCny: from.PriceCny,
+						To: to.Symbol, ToPreblance: to.Blance, ToBlance: to.Blance + toAmount, ToPriceCny: to.PriceCny})
+				}
+			}
+			fmt.Println("err==========", err)
+			if err == nil {
+				err = session.Commit()
+			} else {
+				err = session.Rollback()
+			}
+		}
+		return err
+
+	})
+
 }

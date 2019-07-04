@@ -5,8 +5,8 @@ type DimCoin struct {
 	NameEn   string
 	NameCn   string
 	Symbol   string
-	PriceCny float64
-	PriceUsd float64
+	PriceCny float64 `json:"PriceCny,string"`
+	PriceUsd float64 `json:"PriceUsd,string"`
 	Icon     string
 	WebSite  string
 	State    string

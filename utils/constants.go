@@ -1,10 +1,10 @@
 package utils
 
 //STATUS_ENABLE const 生效状态位
-const STATE_ENABLE = "1"
+const STATE_ENABLE = 1
 
 //STATUS_DISABLE const 生效状态位
-const STATE_DISABLE = "0"
+const STATE_DISABLE = 0
 
 //HTTP_SUCCESS_CODE const HTTP生效状态位
 

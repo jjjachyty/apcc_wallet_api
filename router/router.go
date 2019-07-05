@@ -37,7 +37,6 @@ func WebRouter(router *gin.Engine) {
 			user.POST("/loginpasswd", userCtr.UserController{}.LoginPassword)
 			user.POST("/profile", userCtr.UserController{}.Profile)
 			user.POST("/idcard", userCtr.UserController{}.IDCard)
-			user.GET("/assets", assetCtl.AssetController{}.List)
 
 		}
 		assets := v1.Group("/assets") //参数模块
@@ -47,6 +46,7 @@ func WebRouter(router *gin.Engine) {
 			assets.GET("/exchangeassets", assetCtl.AssetController{}.ExchangeAssets)
 			assets.POST("/exchange", assetCtl.AssetController{}.Exchange)
 			assets.GET("/free", assetCtl.AssetController{}.Free)
+			assets.POST("/transfer", assetCtl.AssetController{}.Transfer)
 		}
 
 		com.POST("/idcardrecognition", commonCtr.IDCardRecognition)

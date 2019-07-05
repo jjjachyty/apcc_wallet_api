@@ -20,26 +20,6 @@ type AssetController struct{}
 var userService userSrv.UserService
 var assetService assetSrv.AssetService
 
-func (AssetController) Transfer(c *gin.Context) {
-	var err = errors.New("参数缺失")
-	var payPass = false
-	address := c.PostForm("address")
-	amount := c.PostForm("amount")
-	payPasswd := c.PostForm("payPasswd")
-	claims := jwt.GetClaims(c)
-	if address != "" && amount != "" && payPasswd != "" {
-		user := new(userMod.User)
-		user.UUID = claims.UUID
-		user.PayPasswd = utils.GetMD5(payPasswd)
-		//检查支付密码
-		if payPass, err = userService.CheckPayPasswd(user); payPass {
-			//支付密码通过
-
-		}
-	}
-	utils.Response(c, err, nil)
-}
-
 //获取兑换币种
 func (AssetController) ExchangeAssets(c *gin.Context) {
 	var err error
@@ -50,7 +30,7 @@ func (AssetController) ExchangeAssets(c *gin.Context) {
 		claims := jwt.GetClaims(c)
 		if assets, err = assetService.FindExchange(claims.UUID, mainCoin, exchangeCoin); err == nil {
 			fmt.Println(assets[0].Symbol, mainCoin)
-			if assets[0].Symbol == mainCoin { //排序
+			if assets[0].Symbol == exchangeCoin { //排序
 				assets[0], assets[1] = assets[1], assets[0]
 			}
 		}
@@ -80,8 +60,8 @@ func (AssetController) Exchange(c *gin.Context) {
 				to = assets[0]
 			}
 			if amountF, err = strconv.ParseFloat(amount, 64); err == nil {
-				if from.Blance > amountF {
-					assetService.TransferBlance(from, to, amountF)
+				if from.Blance >= amountF {
+					err = assetService.ExchangeCoin(from, to, amountF)
 				} else {
 					err = errors.New("余额不足")
 				}
@@ -89,6 +69,62 @@ func (AssetController) Exchange(c *gin.Context) {
 				err = errors.New("转出金额格式错误")
 			}
 
+		}
+		// }
+	}
+	utils.Response(c, err, assets)
+}
+
+func (AssetController) Transfer(c *gin.Context) {
+	var err = errors.New("参数缺失")
+	var payPass bool
+	var amountF float64
+	var assets []assetMod.Asset
+
+	fromAddress := c.PostForm("fromAddress")
+	toAddress := c.PostForm("toAddress")
+	symbol := c.PostForm("symbol")
+	amount := c.PostForm("amount")
+	payPasswd := c.PostForm("payPasswd")
+	transferType := c.PostForm("transferType")
+	claims := jwt.GetClaims(c)
+	fmt.Println("111111111111", fromAddress, toAddress, symbol, amount, payPasswd, transferType)
+	if amountF, err = strconv.ParseFloat(amount, 64); err == nil && fromAddress != "" && amount != "" && symbol != "" && transferType != "" && claims.HasPayPasswd {
+
+		//检查支付密码
+		user := new(userMod.User)
+		user.UUID = claims.UUID
+		user.PayPasswd = utils.GetMD5(payPasswd)
+		//检查支付密码
+		if payPass, err = userService.CheckPayPasswd(user); payPass {
+			//支付密码通过
+
+			switch transferType {
+			case "in": //内部转账
+				if assets, err = assetService.FindInnerTransfer(assetMod.Asset{UUID: claims.UUID, Address: fromAddress, Symbol: symbol}, assetMod.Asset{Address: toAddress}); err == nil && len(assets) == 2 {
+					if assets[0].Blance >= amountF {
+						fmt.Println("---------------", assets[1], assets[1].Blance)
+						err = assetService.Send(assets[0], assets[1], amountF, assetSrv.PAY_TYPE_TRANSFER_INNER)
+					} else {
+						err = errors.New("余额不足")
+					}
+
+				} else {
+					err = errors.New("内部转账错误,请核实")
+				}
+			case "out": // 转出平台
+				asset := new(assetMod.Asset)
+				asset.UUID = claims.UUID
+				asset.Address = fromAddress
+				if err = assetService.Get(asset); err == nil {
+					if asset.Blance >= amountF {
+						//转账到外部地址
+
+					}
+				}
+			}
+		} else {
+			err = errors.New("支付密码不正确")
 		}
 		// }
 	}

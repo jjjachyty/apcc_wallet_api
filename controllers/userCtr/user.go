@@ -35,6 +35,7 @@ func (UserController) Register(c *gin.Context) {
 			session := utils.OpenSession()
 			defer session.Close()
 			user.UUID = utils.GetUUID()
+			user.State = utils.STATE_ENABLE
 			if err = userService.Register(user); err == nil {
 				if assets, err = walletSrv.GetAddress(user.UUID, uint32(user.AccountID)); err == nil {
 					err = assetsService.Create(assets)

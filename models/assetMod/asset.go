@@ -20,15 +20,19 @@ func (Asset) TableName() string {
 
 type AssetLog struct {
 	UUID          string `xorm:"varchar(36) 'uuid'"`
-	From          string
+	FromAddress   string
+	FromUser      string
 	FromPreblance float64
 	FromBlance    float64
 	FromPriceCny  float64
-	To            string
+	ToUser        string
+	ToAddress     string
 	ToPreblance   float64
 	ToBlance      float64
 	ToPriceCny    float64
 	CreateAt      time.Time `xorm:"created"`
+	PayType       int
+	State         int
 }
 
 func (AssetLog) TableName() string {

@@ -88,7 +88,7 @@ func (AssetController) Transfer(c *gin.Context) {
 	payPasswd := c.PostForm("payPasswd")
 	transferType := c.PostForm("transferType")
 	claims := jwt.GetClaims(c)
-	fmt.Println("111111111111", fromAddress, toAddress, symbol, amount, payPasswd, transferType)
+
 	if amountF, err = strconv.ParseFloat(amount, 64); err == nil && fromAddress != "" && amount != "" && symbol != "" && transferType != "" && claims.HasPayPasswd {
 
 		//检查支付密码
@@ -103,23 +103,30 @@ func (AssetController) Transfer(c *gin.Context) {
 			case "in": //内部转账
 				if assets, err = assetService.FindInnerTransfer(assetMod.Asset{UUID: claims.UUID, Address: fromAddress, Symbol: symbol}, assetMod.Asset{Address: toAddress}); err == nil && len(assets) == 2 {
 					if assets[0].Blance >= amountF {
-						fmt.Println("---------------", assets[1], assets[1].Blance)
 						err = assetService.Send(assets[0], assets[1], amountF, assetSrv.PAY_TYPE_TRANSFER_INNER)
 					} else {
 						err = errors.New("余额不足")
 					}
 
 				} else {
-					err = errors.New("内部转账错误,请核实")
+					err = errors.New("平台未找到该地址,请核实")
 				}
 			case "out": // 转出平台
 				asset := new(assetMod.Asset)
 				asset.UUID = claims.UUID
 				asset.Address = fromAddress
 				if err = assetService.Get(asset); err == nil {
-					if asset.Blance >= amountF {
-						//转账到外部地址
+					if free, ok := commonSrv.CoinFreee[asset.Symbol]; ok {
 
+						if asset.Blance >= amountF+free {
+							//转账到外部地址
+							err = assetService.Send(*asset, assetMod.Asset{Address: toAddress, Symbol: asset.Symbol}, amountF+free, assetSrv.PAY_TYPE_TRANSFER_OUTER)
+
+						} else {
+							err = fmt.Errorf("金额[%f]不足", asset.Blance)
+						}
+					} else {
+						err = fmt.Errorf("未找到%s的手续费", asset.Symbol)
 					}
 				}
 			}

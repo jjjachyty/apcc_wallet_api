@@ -22,6 +22,7 @@ const (
 )
 
 var (
+	getAssetsSQL     = "select * from asset where uuid = ?"
 	assetsSQL        = "select a.*,b.name_en ,b.name_cn,b.price_cny,b.price_usd FROM asset a LEFT JOIN dim_coin b on  a.symbol = b.symbol where a.uuid=?"
 	exchangeSQL      = "select a.*,b.name_en ,b.name_cn,b.price_cny,b.price_usd FROM asset a LEFT JOIN dim_coin b on  a.symbol = b.symbol where a.uuid=? and (a.symbol=? Or a.symbol = ?)"
 	innerTransferSQL = `SELECT
@@ -65,7 +66,7 @@ func (AssetService) Create(assets []assetMod.Asset) error {
 }
 
 func (AssetService) Get(assets *assetMod.Asset) error {
-	return models.GetBean(assets)
+	return models.SQLBean(assets, getAssetsSQL, assets.UUID)
 }
 
 func (AssetService) Find(uuid string) ([]assetMod.Asset, error) {
@@ -109,11 +110,15 @@ func (AssetService) ExchangeCoin(from, to assetMod.Asset, transferAmount float64
 func (AssetService) Send(from, to assetMod.Asset, amount float64, payType PayTYpe) error {
 
 	return utils.Session(func(session *xorm.Session) (err error) {
+		var state = utils.STATE_ENABLE
+		if payType == PAY_TYPE_TRANSFER_OUTER {
+			state = utils.STATE_DISABLE
+		}
 		if err = session.Begin(); err == nil {
 			if _, err = session.Exec("UPDATE asset a set a.blance = ? where a.uuid = ? and a.symbol=? and a.blance=? ", from.Blance-amount, from.UUID, from.Symbol, from.Blance); err == nil {
 				if _, err = session.Exec("UPDATE asset a set a.blance = ? where a.uuid = ? and a.symbol=? and a.blance=? ", to.Blance+amount, to.UUID, to.Symbol, to.Blance); err == nil {
 					_, err = session.Insert(assetMod.AssetLog{UUID: utils.GetUUID(), FromUser: from.UUID, FromAddress: from.Address, FromPreblance: from.Blance, FromBlance: from.Blance - amount, FromPriceCny: from.PriceCny,
-						ToUser: to.UUID, ToAddress: to.Address, ToPreblance: to.Blance, ToBlance: to.Blance + amount, ToPriceCny: from.PriceCny, PayType: int(payType), State: utils.STATE_DISABLE})
+						ToUser: to.UUID, ToAddress: to.Address, ToPreblance: to.Blance, ToBlance: to.Blance + amount, ToPriceCny: from.PriceCny, PayType: int(payType), State: state})
 				}
 			}
 			if err == nil {

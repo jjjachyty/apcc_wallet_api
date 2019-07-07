@@ -130,6 +130,7 @@ func CloseSessionGID(gid string) {
 
 func Session(fc func(sessin *xorm.Session) error) error {
 	session := dbEngine.NewSession()
+
 	defer session.Close()
 	return fc(session)
 }

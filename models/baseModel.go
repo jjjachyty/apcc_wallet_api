@@ -4,20 +4,9 @@ import (
 	"apcc_wallet_api/utils"
 	"bytes"
 	"net/url"
+	"reflect"
 	"strings"
 )
-
-//QueryByPage 分页查询
-func QueryByPage(pageData *utils.PageData, bean interface{}, results interface{}, orderBy string, sort string, whereSQL string, args ...interface{}) error {
-
-	err := getResultCount(bean, pageData, whereSQL, args...)
-	if nil != err {
-		return err
-	}
-	err = getPageResult(results, pageData, orderBy, sort, whereSQL, args...)
-
-	return err
-}
 
 //Query 实体查询
 func Query(bean interface{}, results interface{}, orderBy string, sort string, whereSQL string, args ...interface{}) error {
@@ -133,48 +122,34 @@ func getResult(results interface{}, orderBy string, sort string, whereSQL string
 	return nil
 }
 
-func getPageResult(results interface{}, pageData *utils.PageData, orderBy string, sort string, whereSQL string, args ...interface{}) error {
+func GetBeansPage(pageData *utils.PageData, condBean interface{}) error {
 	session, flag := utils.GetSession()
-	if nil != args {
-		session.Where(whereSQL, args...)
-	}
-	if "" != orderBy && "" != sort {
-		switch sort {
+	beanType := reflect.TypeOf(condBean)
+	slice := reflect.MakeSlice(reflect.SliceOf(beanType), 0, 15)
+	result := reflect.New(slice.Type())
+	result.Elem().Set(slice)
+
+	if "" != pageData.Page.OrderBy && "" != pageData.Page.Sort {
+		switch pageData.Page.Sort {
 		case "desc":
-			session.Desc(orderBy)
+			session.Desc(pageData.Page.OrderBy)
 		case "asc":
-			session.Asc(orderBy)
+			session.Asc(pageData.Page.OrderBy)
 		}
 	}
-	err := session.Limit(pageData.Page.PageSize, pageData.Page.PageSize*(pageData.Page.CurrentPage-1)).Find(results)
+	total, err := session.Limit(pageData.Page.PageSize, pageData.Page.PageSize*(pageData.Page.CurrentPage-1)).FindAndCount(result.Interface(), condBean)
 	if flag {
 		session.Close()
-	}
-	if nil != err {
-		utils.SysLog.Error("数据库查询出错", err)
-		return err
-	}
-	return nil
-}
-
-func getResultCount(bean interface{}, pageData *utils.PageData, whereSQL string, args ...interface{}) error {
-	session, flag := utils.GetSession()
-	if nil != args {
-		session.Where(whereSQL, args...)
-	}
-	total, err := session.Count(bean)
-	if flag {
-		session.Close()
-	}
-	if nil != err {
-		utils.SysLog.Error("数据库查询出错", err)
-		return err
 	}
 	pageData.Page.TotalRows = total
 	pageSize64 := int64(pageData.Page.PageSize)
 
 	pageData.Page.PageCount = int(pageData.Page.TotalRows % pageSize64)
-
+	pageData.Rows = result.Interface()
+	if nil != err {
+		utils.SysLog.Error("数据库查询出错", err)
+		return err
+	}
 	return nil
 }
 

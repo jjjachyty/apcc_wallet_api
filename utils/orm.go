@@ -151,6 +151,7 @@ func InitDB() {
 		os.Exit(-1)
 	}
 	dbEngine.ShowSQL(true)
+
 	// tbMapper := core.NewPrefixMapper(core.SnakeMapper{}, "lrm_")
 	// dbEngine.SetTableMapper(tbMapper)
 	cqtz, err := time.LoadLocation("Asia/Chongqing")

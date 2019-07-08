@@ -47,6 +47,7 @@ func WebRouter(router *gin.Engine) {
 			assets.POST("/exchange", assetCtl.AssetController{}.Exchange)
 			assets.GET("/free", assetCtl.AssetController{}.Free)
 			assets.POST("/transfer", assetCtl.AssetController{}.Transfer)
+			assets.GET("/orders", assetCtl.AssetController{}.Orders)
 		}
 
 		com.POST("/idcardrecognition", commonCtr.IDCardRecognition)

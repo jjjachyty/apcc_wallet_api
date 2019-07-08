@@ -69,6 +69,10 @@ func (AssetService) Get(assets *assetMod.Asset) error {
 	return models.SQLBean(assets, getAssetsSQL, assets.UUID)
 }
 
+func (AssetService) GetLogs(page *utils.PageData, condBean interface{}) error {
+	return models.GetBeansPage(page, condBean)
+}
+
 func (AssetService) Find(uuid string) ([]assetMod.Asset, error) {
 	var assets = make([]assetMod.Asset, 0)
 	return assets, models.SQLBeans(&assets, assetsSQL, uuid)
@@ -91,8 +95,8 @@ func (AssetService) ExchangeCoin(from, to assetMod.Asset, transferAmount float64
 		if err = session.Begin(); err == nil {
 			if _, err = session.Exec("UPDATE asset a set a.blance = ? where a.uuid = ? and a.symbol=? and a.blance=? ", from.Blance-transferAmount, from.UUID, from.Symbol, from.Blance); err == nil {
 				if _, err = session.Exec("UPDATE asset a set a.blance = ? where a.uuid = ? and a.symbol=? and a.blance=? ", to.Blance+toAmount, to.UUID, to.Symbol, to.Blance); err == nil {
-					_, err = session.Insert(assetMod.AssetLog{UUID: utils.GetUUID(), FromUser: from.UUID, FromAddress: from.Address, FromPreblance: from.Blance, FromBlance: from.Blance - transferAmount, FromPriceCny: from.PriceCny,
-						ToUser: to.UUID, ToAddress: to.Address, ToPreblance: to.Blance, ToBlance: to.Blance + toAmount, ToPriceCny: to.PriceCny, PayType: int(PAY_TYPE_EXCHANGE), State: utils.STATE_ENABLE})
+					_, err = session.Insert(assetMod.AssetLog{UUID: utils.GetUUID(), FromUser: from.UUID, FromCoin: from.Symbol, FromAddress: from.Address, FromPreblance: from.Blance, FromBlance: from.Blance - transferAmount, FromPriceCny: from.PriceCny,
+						ToUser: to.UUID, ToCoin: to.Symbol, ToAddress: to.Address, ToPreblance: to.Blance, ToBlance: to.Blance + toAmount, ToPriceCny: to.PriceCny, PayType: int(PAY_TYPE_EXCHANGE), State: utils.STATE_ENABLE})
 				}
 			}
 			if err == nil {
@@ -117,8 +121,8 @@ func (AssetService) Send(from, to assetMod.Asset, amount float64, payType PayTYp
 		if err = session.Begin(); err == nil {
 			if _, err = session.Exec("UPDATE asset a set a.blance = ? where a.uuid = ? and a.symbol=? and a.blance=? ", from.Blance-amount, from.UUID, from.Symbol, from.Blance); err == nil {
 				if _, err = session.Exec("UPDATE asset a set a.blance = ? where a.uuid = ? and a.symbol=? and a.blance=? ", to.Blance+amount, to.UUID, to.Symbol, to.Blance); err == nil {
-					_, err = session.Insert(assetMod.AssetLog{UUID: utils.GetUUID(), FromUser: from.UUID, FromAddress: from.Address, FromPreblance: from.Blance, FromBlance: from.Blance - amount, FromPriceCny: from.PriceCny,
-						ToUser: to.UUID, ToAddress: to.Address, ToPreblance: to.Blance, ToBlance: to.Blance + amount, ToPriceCny: from.PriceCny, PayType: int(payType), State: state})
+					_, err = session.Insert(assetMod.AssetLog{UUID: utils.GetUUID(), FromUser: from.UUID, FromCoin: from.Symbol, FromAddress: from.Address, FromPreblance: from.Blance, FromBlance: from.Blance - amount, FromPriceCny: from.PriceCny,
+						ToUser: to.UUID, ToCoin: from.Symbol, ToAddress: to.Address, ToPreblance: to.Blance, ToBlance: to.Blance + amount, ToPriceCny: from.PriceCny, PayType: int(payType), State: state})
 				}
 			}
 			if err == nil {

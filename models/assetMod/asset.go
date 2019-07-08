@@ -22,10 +22,12 @@ type AssetLog struct {
 	UUID          string `xorm:"varchar(36) 'uuid'"`
 	FromAddress   string
 	FromUser      string
+	FromCoin      string
 	FromPreblance float64
 	FromBlance    float64
 	FromPriceCny  float64
 	ToUser        string
+	ToCoin        string
 	ToAddress     string
 	ToPreblance   float64
 	ToBlance      float64

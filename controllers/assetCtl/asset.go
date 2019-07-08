@@ -153,6 +153,19 @@ func (AssetController) List(c *gin.Context) {
 	utils.Response(c, err, assets)
 }
 
+//AssetsLogs 获取我的转账记录
+func (AssetController) Orders(c *gin.Context) {
+	var err error
+	var assetsLog = new(assetMod.AssetLog)
+
+	var page = utils.GetPageData(c)
+	if err = c.ShouldBindQuery(assetsLog); err == nil {
+		assetsLog.FromUser = jwt.GetClaims(c).UUID
+		err = assetService.GetLogs(page, assetsLog)
+	}
+	utils.Response(c, err, page)
+}
+
 func (AssetController) Free(c *gin.Context) {
 	var err error
 	var free float64

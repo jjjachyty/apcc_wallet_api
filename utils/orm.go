@@ -165,6 +165,9 @@ func InitDB() {
 	// sl.SetLevel(core.LOG_INFO)
 	// dbEngine.SetLogger(sl)
 
-	// dbEngine.Ping()
+	if dbEngine.Ping() != nil {
+		SysLog.Error("数据库连接失败", err)
+		os.Exit(-1)
+	}
 	// fmt.Println(result)
 }

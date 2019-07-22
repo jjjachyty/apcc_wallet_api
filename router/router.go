@@ -3,6 +3,8 @@ package router
 import (
 	"apcc_wallet_api/controllers/assetCtl"
 	"apcc_wallet_api/controllers/commonCtr"
+	"apcc_wallet_api/controllers/dappCtl"
+	"apcc_wallet_api/controllers/dimCtr"
 	"apcc_wallet_api/controllers/userCtr"
 	"apcc_wallet_api/middlewares/jwt"
 
@@ -22,6 +24,10 @@ func WebRouter(router *gin.Engine) {
 			com.Any("/version", commonCtr.GetMaxVersion)
 		}
 
+		dim := v1.Group("/dim")
+		{
+			dim.GET("/coins", dimCtr.DimCoinController{}.All)
+		}
 		auth := v1.Group("/auth") //参数模块
 		{
 			auth.POST("/register", userCtr.UserController{}.Register)
@@ -30,6 +36,13 @@ func WebRouter(router *gin.Engine) {
 			auth.POST("/refreshtoken", jwt.RefreshToken)
 
 		}
+		dapp := v1.Group("/dapp") //参数模块
+		{
+
+			dapp.GET("/all", dappCtl.DappController{}.Page)
+
+		}
+
 		v1.Use(jwt.JWTAuth())
 		user := v1.Group("/user") //参数模块
 		{

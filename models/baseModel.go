@@ -2,7 +2,7 @@ package models
 
 import (
 	"apcc_wallet_api/utils"
-	"bytes"
+	"fmt"
 	"net/url"
 	"reflect"
 	"strings"
@@ -153,6 +153,34 @@ func GetBeansPage(pageData *utils.PageData, condBean interface{}) error {
 	return nil
 }
 
+func GetSQLPage(pageData *utils.PageData, where string, args ...interface{}) error {
+	session, flag := utils.GetSession()
+
+	if "" != pageData.Page.OrderBy && "" != pageData.Page.Sort {
+		switch pageData.Page.Sort {
+		case "desc":
+			session.Desc(pageData.Page.OrderBy)
+		case "asc":
+			session.Asc(pageData.Page.OrderBy)
+		}
+	}
+	fmt.Println("----------------------", reflect.TypeOf(pageData.Rows))
+	total, err := session.Limit(pageData.Page.PageSize, pageData.Page.PageSize*(pageData.Page.CurrentPage-1)).Where(where, args...).FindAndCount(pageData.Rows)
+	if flag {
+		session.Close()
+	}
+	pageData.Page.TotalRows = total
+	pageSize64 := int64(pageData.Page.PageSize)
+
+	pageData.Page.PageCount = int(pageData.Page.TotalRows % pageSize64)
+
+	if nil != err {
+		utils.SysLog.Error("数据库查询出错", err)
+		return err
+	}
+	return nil
+}
+
 func getOneResult(results interface{}, whereSQL string, args ...interface{}) (bool, error) {
 	session, flag := utils.GetSession()
 
@@ -171,26 +199,16 @@ func getOneResult(results interface{}, whereSQL string, args ...interface{}) (bo
 	return has, err
 }
 
-func GetSQL(pars url.Values, filedSQL map[string]string) (string, []interface{}, string, string) {
+func GetSQL(pars url.Values, filedSQL map[string]string) (string, []interface{}) {
 	var whereSQL string
 	var args []interface{}
-	var AndFlag bool = false
-	var orderBy string
-	var sort string
+	var AndFlag = false
+	// var orderBy string
+	// var sort string
 
-	delete(pars, "Sid")
-	delete(pars, "UserId")
-
-	if nil != pars["sort"] {
-		sort = pars["sort"][0]
-	}
-	if nil != pars["orderBy"] {
-		orderBy = Field2Cols(pars["orderBy"][0])
-	}
-
-	delete(pars, "orderBy")
+	delete(pars, "order")
 	delete(pars, "sort")
-
+	delete(pars, "page")
 	for k, v := range pars {
 		if AndFlag {
 			whereSQL += " AND "
@@ -229,17 +247,5 @@ func GetSQL(pars url.Values, filedSQL map[string]string) (string, []interface{},
 		}
 
 	}
-	return whereSQL, args, orderBy, sort
-}
-
-func Field2Cols(filed string) string {
-	byts := []byte(filed)
-	col := bytes.NewBuffer(nil)
-	for i, v := range byts {
-		if (int(v) > 64 && int(v) < 91) && i > 0 { //大写字母
-			col.WriteByte('_')
-		}
-		col.WriteByte(v)
-	}
-	return col.String()
+	return whereSQL, args
 }

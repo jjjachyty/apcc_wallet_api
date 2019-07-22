@@ -9,7 +9,7 @@ type DimCoin struct {
 	PriceUsd float64 `json:"PriceUsd,string"`
 	Icon     string
 	WebSite  string
-	State    string
+	State    int
 	Synopsis string
 }
 

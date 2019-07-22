@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"bytes"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -41,10 +42,25 @@ func GetPageData(c *gin.Context) *PageData {
 
 	}
 	if hasOrder && hasSort {
+
+		order = Field2Cols(order)
+
 		pageData.Page.OrderBy = order
 		pageData.Page.Sort = sort
 	}
 
 	return pageData
 
+}
+
+func Field2Cols(filed string) string {
+	byts := []byte(filed)
+	col := bytes.NewBuffer(nil)
+	for i, v := range byts {
+		if (int(v) > 64 && int(v) < 91) && i > 0 { //大写字母
+			col.WriteByte('_')
+		}
+		col.WriteByte(v)
+	}
+	return col.String()
 }

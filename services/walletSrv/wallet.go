@@ -29,7 +29,6 @@ func GetBtcAddress(acountID uint32) (string, error) {
 	key, err := bip32.B58Deserialize(accountBtcPub)
 	if err == nil {
 		if child, err := key.NewChildKey(acountID); err == nil {
-			// fmt.Println(utils.GetAddress(child.Key))
 
 			ext, _ := hdkeychain.NewKeyFromString(child.String())
 			address, _ := ext.Address(&chaincfg.Params{Net: wire.MainNet})

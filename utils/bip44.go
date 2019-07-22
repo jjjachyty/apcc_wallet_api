@@ -32,13 +32,6 @@ func GetMasterKey(mnemonic string, passwd string) *bip32.Key {
 
 	fmt.Println(math.MaxUint32)
 	fmt.Println("pub:", masterChild.PublicKey())
-
-	// masterChild, _ = masterChild.NewChildKey(100000000)
-	// pubMasterChild := masterChild.PublicKey()
-	// // fmt.Printf("%x  %x  %x %s\n", masterChild.Key, masterChild.ChainCode, masterChild.ChildNumber, masterChild)
-	// fmt.Printf("%x\n", pubMasterChild.Key)
-	// xpub := masterKey.PublicKey()
-
 	return masterKey
 }
 

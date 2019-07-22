@@ -4,7 +4,7 @@ environment = "production1" #production 生产
 [database]
 type="mysql"
 drivername="mysql"
-server = "119.3.109.154"
+server = "119.3.108.19"
 port="3366"
 sid="wallet"
 username="dapps"

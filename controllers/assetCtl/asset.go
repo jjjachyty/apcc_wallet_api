@@ -6,6 +6,7 @@ import (
 	"apcc_wallet_api/models/userMod"
 	"apcc_wallet_api/services/assetSrv"
 	"apcc_wallet_api/services/commonSrv"
+	"apcc_wallet_api/services/dimSrv"
 	"apcc_wallet_api/services/userSrv"
 	"apcc_wallet_api/utils"
 	"errors"
@@ -19,6 +20,8 @@ type AssetController struct{}
 
 var userService userSrv.UserService
 var assetService assetSrv.AssetService
+var exchangeService assetSrv.ExchangeService
+var dimCoinService dimSrv.DimCoinService
 
 //获取兑换币种
 func (AssetController) ExchangeAssets(c *gin.Context) {
@@ -40,39 +43,31 @@ func (AssetController) ExchangeAssets(c *gin.Context) {
 
 func (AssetController) Exchange(c *gin.Context) {
 	var err error
+	var ok bool
+	var rate, free float64
+	var exchange = new(assetMod.Exchange)
 
-	var amountF float64
-	var assets []assetMod.Asset
-
-	mainCoin := c.PostForm("mainCoin")
-	exchangeCoin := c.PostForm("exchangeCoin")
-	amount := c.PostForm("amount")
-	if mainCoin != "" && exchangeCoin != "" && amount != "" {
-		claims := jwt.GetClaims(c)
-
-		// if rate, err = commonSrv.GetExchange(mainCoin, exchangeCoin); err != nil {
-		if assets, err = assetService.FindExchange(claims.UUID, mainCoin, exchangeCoin); err == nil && len(assets) == 2 {
-			var from = assets[0]
-			var to = assets[1]
-
-			if from.Symbol == mainCoin {
-				from = assets[1]
-				to = assets[0]
-			}
-			if amountF, err = strconv.ParseFloat(amount, 64); err == nil {
-				if from.Blance >= amountF {
-					err = assetService.ExchangeCoin(from, to, amountF)
-				} else {
-					err = errors.New("余额不足")
-				}
-			} else {
-				err = errors.New("转出金额格式错误")
+	// mainCoin, hasMainCoin := c.GetQuery("mainCoin")
+	// mainAddress, hasMainAddress := c.GetQuery("mainAddress")
+	// receiveAddress, hasReceiveAddress := c.GetQuery("receiveAddress")
+	// exchangeCoin, hasExchangeCoin := c.GetQuery("exchangeCoin")
+	// exchangeAddress, hasExchangeAddress := c.GetQuery("exchangeAddress")
+	// amount, hasAmount := c.GetQuery("amount")
+	// free, hasFree := c.GetQuery("free")
+	if err = c.BindJSON(exchange); err == nil {
+		exchange.User = jwt.GetClaims(c).Id
+		if rate, err = dimCoinService.GetExchange(exchange.FromCoin, exchange.ToCoin); err == nil {
+			exchange.Rate = rate
+			if free, ok = dimCoinService.CoinFreee[exchange.ToCoin]; ok {
+				exchange.Free = free
+				err = exchangeService.Add(exchange)
 			}
 
 		}
-		// }
+
 	}
-	utils.Response(c, err, assets)
+
+	utils.Response(c, err, nil)
 }
 
 func (AssetController) Transfer(c *gin.Context) {

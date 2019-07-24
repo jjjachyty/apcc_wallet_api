@@ -58,8 +58,12 @@ func WebRouter(router *gin.Engine) {
 			assets.GET("/all", assetCtl.AssetController{}.List)
 			assets.GET("/exchangeassets", assetCtl.AssetController{}.ExchangeAssets)
 			assets.POST("/exchange", assetCtl.AssetController{}.Exchange)
+			assets.GET("/exchanges", assetCtl.AssetController{}.ExchangeList)
 			assets.GET("/free", assetCtl.AssetController{}.Free)
-			assets.POST("/transfer", assetCtl.AssetController{}.Transfer)
+			assets.GET("/exchangefree", assetCtl.AssetController{}.ExchangeFree)
+			assets.GET("/exchangerate", assetCtl.AssetController{}.GetExchangeRate)
+
+			// assets.POST("/transfer", assetCtl.AssetController{}.Transfer)
 			assets.GET("/orders", assetCtl.AssetController{}.Orders)
 		}
 

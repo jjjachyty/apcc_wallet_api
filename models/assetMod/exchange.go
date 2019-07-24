@@ -13,6 +13,7 @@ type Exchange struct {
 	ToCoin         string
 	ToAddress      string
 	SendTxs        string
+	SendAt         time.Time
 	Amount         float64
 	Free           float64
 	Rate           float64

@@ -9,13 +9,17 @@ import (
 
 type DimCoinService struct{}
 
-var Coins = make(map[string]dimMod.DimCoin)
+var coins = make(map[string]dimMod.DimCoin)
+
+func (DimCoinService) GetCoin(coinSymbol string) dimMod.DimCoin {
+	return coins[coinSymbol]
+}
 
 func init() {
-	coins := make([]dimMod.DimCoin, 0)
-	if err := models.GetBeans(&coins, dimMod.DimCoin{State: utils.STATE_ENABLE}); err == nil {
-		for _, coin := range coins {
-			Coins[coin.Symbol] = coin
+	coinRows := make([]dimMod.DimCoin, 0)
+	if err := models.GetBeans(&coinRows, dimMod.DimCoin{State: utils.STATE_ENABLE}); err == nil {
+		for _, coin := range coinRows {
+			coins[coin.Symbol] = coin
 		}
 	}
 
@@ -26,15 +30,24 @@ func (DimCoinService) Find() ([]dimMod.DimCoin, error) {
 	return coins, err
 }
 
-func (DimCoinService) GetExchange(mainCoin, exchangeCoin string) (float64, error) {
-	var exchangeRate = Coins[exchangeCoin].PriceCny
-	var mainRate = Coins[mainCoin].PriceCny
+func (DimCoinService) GetExchangeRate(mainCoin, exchangeCoin string) (float64, error) {
+	var exchangeRate = coins[exchangeCoin].PriceCny
+	var mainRate = coins[mainCoin].PriceCny
 	if exchangeRate > 0 && mainRate > 0 {
-		return exchangeRate / mainRate, nil
+		return mainRate / exchangeRate, nil
 	}
 	return 0, fmt.Errorf("未找到[%s->%s]的汇率", mainCoin, exchangeCoin)
 }
 
-func (DimCoinService) GetExchangeUSDTFree(coin string) float64 {
-	return Coins[coin].ExchangeUsdtFree
+func (DimCoinService) GetExchangeUSDTFree(coin string) (float64, bool) {
+	if coin, ok := coins[coin]; ok {
+		return coin.ExchangeUsdtFree, ok
+	}
+	return 0, false
+}
+func (DimCoinService) GetFree(coin string) (float64, bool) {
+	if coin, ok := coins[coin]; ok {
+		return coin.TransferFree, ok
+	}
+	return 0, false
 }

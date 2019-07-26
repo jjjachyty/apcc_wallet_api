@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"math"
 	"math/big"
-	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 
@@ -41,21 +40,21 @@ func init() {
 		panic("MHC服务器连接失败")
 	}
 	Scan()
-	go func() {
-		timer := time.NewTimer(time.Second * 10)
-		for {
-			select {
-			case <-timer.C:
-				timer.Reset(time.Second * 10)
-				Scan()
-			}
-		}
-	}()
+	// go func() {
+	// 	timer := time.NewTimer(time.Second * 10)
+	// 	for {
+	// 		select {
+	// 		case <-timer.C:
+	// 			timer.Reset(time.Second * 10)
+	// 			Scan()
+	// 		}
+	// 	}
+	// }()
 }
 
 func Scan() {
 	if exchanges, err := getWaitExchange(); err == nil {
-		waitExchanges
+
 		for _, exchange := range exchanges {
 			switch exchange.FromCoin + exchange.ToCoin {
 			case "MHCUSDT":

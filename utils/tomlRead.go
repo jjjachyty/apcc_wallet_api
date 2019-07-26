@@ -21,6 +21,20 @@ type port struct {
 	Port string
 }
 
+type cache struct {
+	Cluster cluster
+	Single  single
+}
+type cluster struct {
+	Addrs []string
+}
+
+type single struct {
+	Server   string
+	PassWord string
+	DB       int
+}
+
 type produrce struct {
 	Server string
 	Port   string
@@ -41,20 +55,6 @@ type database struct {
 
 type auth struct {
 	Server string
-}
-
-type cache struct {
-	Cluster cluster
-	Single  single
-}
-type cluster struct {
-	Addrs []string
-}
-
-type single struct {
-	Server   string
-	PassWord string
-	DB       int
 }
 
 type logs struct {

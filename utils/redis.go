@@ -4,8 +4,6 @@ import (
 	"errors"
 	"time"
 
-	"pccqcpa.com.cn/app/fpm/api/utils"
-
 	"github.com/go-redis/redis"
 )
 
@@ -14,11 +12,11 @@ type cacheRedis struct {
 	clusterClient *redis.ClusterClient
 }
 
-var cache cacheRedis
+var redisCache cacheRedis
 var flag int
 
 func init() {
-	var cacheCfg = utils.GetCacheCfg()
+	var cacheCfg = GetCacheCfg()
 	if 0 < len(cacheCfg.Cluster.Addrs) { //集群
 		flag = 2
 	} else if "" != cacheCfg.Single.Server { //单机
@@ -27,35 +25,35 @@ func init() {
 
 	switch flag {
 	case 1: //单机模式
-		cache.client = redis.NewClient(&redis.Options{
+		redisCache.client = redis.NewClient(&redis.Options{
 			Addr:     cacheCfg.Single.Server,
 			Password: cacheCfg.Single.PassWord, // no password set
 			DB:       cacheCfg.Single.DB,       // use default DB
 		})
-		_, err := cache.client.Ping().Result()
+		_, err := redisCache.client.Ping().Result()
 		if nil != err {
-			// utils.SysLog.Errorf("单机版缓存连接失败,请检测toml配置文件%v", err)
-			utils.SysLog.Panic("单机版缓存连接失败,请检查config/app.toml配置文件\n" + err.Error())
+			// SysLog.Errorf("单机版缓存连接失败,请检测toml配置文件%v", err)
+			SysLog.Panic("单机版缓存连接失败,请检查config/app.toml配置文件\n" + err.Error())
 		} else {
-			utils.SysLog.Infoln("启用单机版缓存")
-			cache.client.FlushAll()
+			SysLog.Infoln("启用单机版缓存")
+			redisCache.client.FlushAll()
 		}
 
 	case 2: //集群模式
-		cache.clusterClient = redis.NewClusterClient(&redis.ClusterOptions{
+		redisCache.clusterClient = redis.NewClusterClient(&redis.ClusterOptions{
 			Addrs: cacheCfg.Cluster.Addrs,
 		})
-		_, err := cache.clusterClient.Ping().Result()
+		_, err := redisCache.clusterClient.Ping().Result()
 		if nil != err {
-			utils.SysLog.Error("集群版缓存连接失败,请检测toml配置文件", err)
+			SysLog.Error("集群版缓存连接失败,请检测toml配置文件", err)
 			panic("集群版缓存连接失败,请检查config/app.toml配置文件\n" + err.Error())
 		} else {
-			utils.SysLog.Infoln("启用集群版缓存")
-			cache.clusterClient.FlushAll()
+			SysLog.Infoln("启用集群版缓存")
+			redisCache.clusterClient.FlushAll()
 		}
 
 	default:
-		utils.SysLog.Infoln("Redis缓存未开启,无法使用")
+		SysLog.Infoln("Redis缓存未开启,无法使用")
 	}
 
 }
@@ -66,14 +64,14 @@ func Set(key string, value interface{}, expiration time.Duration) error {
 	var err error
 	if 0 < flag {
 		if 2 == flag { //集群
-			statusCmd = cache.clusterClient.Set(key, value, expiration)
+			statusCmd = redisCache.clusterClient.Set(key, value, expiration)
 		} else {
-			statusCmd = cache.client.Set(key, value, expiration)
+			statusCmd = redisCache.client.Set(key, value, expiration)
 		}
 
 	} else {
 		err = errors.New("redis 缓存配置未开启,请先开启Redis 缓存配置")
-		utils.SysLog.Error("Get Value失败", err)
+		SysLog.Error("Get Value失败", err)
 		return err
 	}
 	return statusCmd.Err()
@@ -85,14 +83,14 @@ func HMSet(key string, maps map[string]interface{}) error {
 	var err error
 	if 0 < flag {
 		if 2 == flag { //集群
-			statusCmd = cache.clusterClient.HMSet(key, maps)
+			statusCmd = redisCache.clusterClient.HMSet(key, maps)
 		} else {
-			statusCmd = cache.client.HMSet(key, maps)
+			statusCmd = redisCache.client.HMSet(key, maps)
 		}
 
 	} else {
 		err = errors.New("redis 缓存配置未开启,请先开启Redis 缓存配置")
-		utils.SysLog.Error("Hash SET 失败", err)
+		SysLog.Error("Hash SET 失败", err)
 		return err
 	}
 	return statusCmd.Err()
@@ -104,14 +102,14 @@ func SAdd(key string, sets ...interface{}) error {
 	var err error
 	if 0 < flag {
 		if 2 == flag { //集群
-			intCmd = cache.clusterClient.SAdd(key, sets...)
+			intCmd = redisCache.clusterClient.SAdd(key, sets...)
 		} else {
-			intCmd = cache.client.SAdd(key, sets...)
+			intCmd = redisCache.client.SAdd(key, sets...)
 		}
 
 	} else {
 		err = errors.New("redis 缓存配置未开启,请先开启Redis 缓存配置")
-		utils.SysLog.Error("Set集合类型 SAdd 失败", err)
+		SysLog.Error("Set集合类型 SAdd 失败", err)
 		return err
 	}
 	return intCmd.Err()
@@ -122,16 +120,16 @@ func SMembers(key string) ([]string, error) {
 	var ssCmd *redis.StringSliceCmd
 	if 0 < flag {
 		if 2 == flag { //集群
-			ssCmd = cache.clusterClient.SMembers(key)
+			ssCmd = redisCache.clusterClient.SMembers(key)
 		} else {
 
-			ssCmd = cache.client.SMembers(key)
+			ssCmd = redisCache.client.SMembers(key)
 
 		}
 
 	} else {
 		err := errors.New("redis 缓存配置未开启,请先开启Redis 缓存配置")
-		utils.SysLog.Error("SMembers 获取Set集合 失败", err)
+		SysLog.Error("SMembers 获取Set集合 失败", err)
 		return nil, err
 	}
 	return ssCmd.Result()
@@ -142,16 +140,16 @@ func HMGet(key string, fields ...string) ([]interface{}, error) {
 	var ssCmd *redis.SliceCmd
 	if 0 < flag {
 		if 2 == flag { //集群
-			ssCmd = cache.clusterClient.HMGet(key, fields...)
+			ssCmd = redisCache.clusterClient.HMGet(key, fields...)
 		} else {
 
-			ssCmd = cache.client.HMGet(key, fields...)
+			ssCmd = redisCache.client.HMGet(key, fields...)
 
 		}
 
 	} else {
 		err := errors.New("redis 缓存配置未开启,请先开启Redis 缓存配置")
-		utils.SysLog.Error("HMGet 失败", err)
+		SysLog.Error("HMGet 失败", err)
 		return nil, err
 	}
 	return ssCmd.Result()
@@ -163,15 +161,15 @@ func HGetAll(key string) (map[string]string, error) {
 	if 0 < flag {
 		if 2 == flag { //集群
 			//取key下面所有的值
-			ssmCmd = cache.clusterClient.HGetAll(key)
+			ssmCmd = redisCache.clusterClient.HGetAll(key)
 		} else {
 			//取key下面所有的值
-			ssmCmd = cache.client.HGetAll(key)
+			ssmCmd = redisCache.client.HGetAll(key)
 		}
 
 	} else {
 		err := errors.New("redis 缓存配置未开启,请先开启Redis 缓存配置")
-		utils.SysLog.Error("HGetAll 失败", err)
+		SysLog.Error("HGetAll 失败", err)
 		return nil, err
 	}
 	return ssmCmd.Result()
@@ -183,15 +181,15 @@ func HDel(key string, fields ...string) error {
 	if 0 < flag {
 		if 2 == flag { //集群
 
-			intCmd = cache.clusterClient.HDel(key, fields...)
+			intCmd = redisCache.clusterClient.HDel(key, fields...)
 		} else {
 
-			intCmd = cache.client.HDel(key, fields...)
+			intCmd = redisCache.client.HDel(key, fields...)
 		}
 
 	} else {
 		err := errors.New("redis 缓存配置未开启,请先开启Redis 缓存配置")
-		utils.SysLog.Error("HDel 失败", err)
+		SysLog.Error("HDel 失败", err)
 		return err
 	}
 	return intCmd.Err()
@@ -203,15 +201,15 @@ func Get(key string) (string, error) {
 	var err error
 	if 0 < flag {
 		if 2 == flag { //集群
-			stringCmd = cache.clusterClient.Get(key)
+			stringCmd = redisCache.clusterClient.Get(key)
 		} else {
-			stringCmd = cache.client.Get(key)
+			stringCmd = redisCache.client.Get(key)
 
 		}
 
 	} else {
 		err = errors.New("redis 缓存配置未开启,请先开启Redis 缓存配置")
-		utils.SysLog.Error("Get Value失败", err)
+		SysLog.Error("Get Value失败", err)
 		return "", err
 
 	}
@@ -224,14 +222,14 @@ func Keys(pattern string) ([]string, error) {
 	var ssCmd *redis.StringSliceCmd
 	if 0 < flag {
 		if 2 == flag { //集群
-			ssCmd = cache.clusterClient.Keys(pattern)
+			ssCmd = redisCache.clusterClient.Keys(pattern)
 		} else {
-			ssCmd = cache.client.Keys(pattern)
+			ssCmd = redisCache.client.Keys(pattern)
 		}
 
 	} else {
 		err := errors.New("redis 缓存配置未开启,请先开启Redis 缓存配置")
-		utils.SysLog.Error("Del Key失败", err)
+		SysLog.Error("Del Key失败", err)
 		return nil, err
 	}
 	return ssCmd.Result()
@@ -243,14 +241,14 @@ func Del(key string) error {
 	var err error
 	if 0 < flag {
 		if 2 == flag { //集群
-			intCmd = cache.clusterClient.Del(key)
+			intCmd = redisCache.clusterClient.Del(key)
 		} else {
-			intCmd = cache.client.Del(key)
+			intCmd = redisCache.client.Del(key)
 		}
 
 	} else {
 		err = errors.New("redis 缓存配置未开启,请先开启Redis 缓存配置")
-		utils.SysLog.Error("Del Key失败", err)
+		SysLog.Error("Del Key失败", err)
 		return err
 
 	}
@@ -263,19 +261,19 @@ func Subscribe(channel string) (*redis.PubSub, error) {
 	var err error
 	if 0 < flag {
 		if 2 == flag { //集群
-			pubsub = cache.clusterClient.Subscribe(channel)
+			pubsub = redisCache.clusterClient.Subscribe(channel)
 		} else {
-			pubsub = cache.client.Subscribe(channel)
+			pubsub = redisCache.client.Subscribe(channel)
 		}
 
 		// Wait for subscription to be created before publishing message.
 		_, err = pubsub.ReceiveTimeout(time.Second)
 		if err != nil {
-			utils.SysLog.Errorf("订阅通道[%s]失败%v", err)
+			SysLog.Errorf("订阅通道[%s]失败%v", err)
 		}
 	} else {
 		err = errors.New("redis 缓存配置未开启,请先开启Redis 缓存配置")
-		utils.SysLog.Error("Subscribe消息失败", err)
+		SysLog.Error("Subscribe消息失败", err)
 	}
 	return pubsub, err
 }
@@ -285,17 +283,17 @@ func Publish(channel string, message interface{}) error {
 	var err error
 	if 0 < flag {
 		if 2 == flag { //集群
-			err = cache.clusterClient.Publish(channel, message).Err()
+			err = redisCache.clusterClient.Publish(channel, message).Err()
 		} else {
-			err = cache.client.Publish(channel, message).Err()
+			err = redisCache.client.Publish(channel, message).Err()
 		}
 		if err != nil {
-			utils.SysLog.Errorf("向通道[%s]发布失败%v", err)
+			SysLog.Errorf("向通道[%s]发布失败%v", err)
 
 		}
 	} else {
 		err = errors.New("redis 缓存配置未开启,请先开启Redis 缓存配置")
-		utils.SysLog.Error("Publish消息失败", err)
+		SysLog.Error("Publish消息失败", err)
 
 	}
 	return err

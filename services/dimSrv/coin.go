@@ -39,9 +39,9 @@ func (DimCoinService) GetExchangeRate(mainCoin, exchangeCoin string) (float64, e
 	return 0, fmt.Errorf("未找到[%s->%s]的汇率", mainCoin, exchangeCoin)
 }
 
-func (DimCoinService) GetExchangeUSDTFree(coin string) (float64, bool) {
+func (DimCoinService) GetExchangeFree(coin string) (float64, bool) {
 	if coin, ok := coins[coin]; ok {
-		return coin.ExchangeUsdtFree, ok
+		return coin.ExchangeFree, ok
 	}
 	return 0, false
 }

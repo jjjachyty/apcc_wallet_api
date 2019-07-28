@@ -57,7 +57,7 @@ func (AssetController) Exchange(c *gin.Context) {
 		fmt.Println(jwt.GetClaims(c).UUID)
 		if rate, err = dimCoinService.GetExchangeRate(exchange.FromCoin, exchange.ToCoin); err == nil {
 			exchange.Rate = rate
-			if free, ok = dimCoinService.GetExchangeUSDTFree(exchange.FromCoin); ok {
+			if free, ok = dimCoinService.GetExchangeFree(exchange.FromCoin); ok {
 				exchange.Free = free
 				err = exchangeService.Add(exchange)
 			}
@@ -190,21 +190,18 @@ func (AssetController) Free(c *gin.Context) {
 //获取兑换费用
 func (AssetController) ExchangeFree(c *gin.Context) {
 	var err error
-	var exchangeFree, free, totalFree float64
-	coin, ok := c.GetQuery("coin")
-	if ok {
-		if exchangeFree, ok = dimCoinService.GetExchangeUSDTFree(coin); ok {
+	var exchangeFree float64
+	coin, ok := c.GetQuery("mainCoin")
+	// exchange, exchangeOk := c.GetQuery("exchangeCoin")
 
-			if free, ok = dimCoinService.GetFree(coin); ok {
-				totalFree = free + exchangeFree
-			}
-		} else {
+	if ok {
+		if exchangeFree, ok = dimCoinService.GetExchangeFree(coin); !ok {
 			err = errors.New("币种不存在")
 		}
 	} else {
 		err = errors.New("缺失币种参数")
 	}
-	utils.Response(c, err, totalFree)
+	utils.Response(c, err, exchangeFree)
 }
 
 //获取兑换费用

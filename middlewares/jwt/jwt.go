@@ -68,9 +68,9 @@ var (
 
 // 载荷，可以加一些自己需要的信息
 type CustomClaims struct {
-	UUID         string `json:"uuid"`
-	Phone        string `json:"phone"`
-	HasPayPasswd bool   `json:"hasPayPasswd"`
+	UUID      string `json:"uuid"`
+	Phone     string `json:"phone"`
+	AccountID int    `json:"accountID"`
 	jwt.StandardClaims
 }
 
@@ -148,7 +148,7 @@ func GenerateToken(user userMod.User) (string, error) {
 	claims := CustomClaims{
 		user.UUID,
 		user.Phone,
-		user.HasPayPasswd,
+		user.AccountID,
 		jwt.StandardClaims{
 			NotBefore: int64(time.Now().Unix() - 1000), // 签名生效时间
 			ExpiresAt: int64(time.Now().Unix() + 3600), // 过期时间 一小时

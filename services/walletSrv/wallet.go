@@ -17,6 +17,11 @@ import (
 )
 
 const (
+	BASE_ON_BTC = "BTC"
+	BASE_ON_ETH = "ETH"
+)
+
+const (
 	// mnemonic  = "拒 计 精 荷 酸 压 悲 尤 针 过 凡 纪 东 谓 嫩 哭 敢 韦 洞 穆 叛 柳 趋 瑞"
 	// passwd    = "123456"
 	// masterkey = "xprv9s21ZrQH143K2BHJXFAdkZhaUsc1qfuTnd1RdBQFLm8oxx5uD9NAQem3H9QpKmqFMvHGr1ypjSHFmPBWHcev7XSydBbBu214NzNcywvDTpJ"
@@ -53,16 +58,18 @@ func GetEthAddress(acountID uint32) (string, error) {
 }
 
 func GetAddress(userid string, acountID uint32) ([]assetMod.Asset, error) {
-	var assets = make([]assetMod.Asset, 2)
-	var usdtAddr, mhcAddr string
+	var assets = make([]assetMod.Asset, 3)
+	var ethAddr string
 	var err error
-	if usdtAddr, err = GetBtcAddress(acountID); err == nil {
 
-		assets[0] = assetMod.Asset{UUID: userid, Symbol: assetSrv.USDT_COIN_SYMBOL, Address: usdtAddr}
+	if ethAddr, err = GetEthAddress(acountID); err == nil {
+		assets[0] = assetMod.Asset{UUID: userid, Symbol: assetSrv.HMC_COIN_SYMBOL, BaseOn: BASE_ON_ETH, Address: ethAddr}
+		assets[1] = assetMod.Asset{UUID: userid, Symbol: assetSrv.USDT_COIN_SYMBOL, BaseOn: BASE_ON_ETH, Address: ethAddr}
+	}
+	// if btcAddr, err = GetBtcAddress(acountID); err == nil {
 
-	}
-	if mhcAddr, err = GetEthAddress(acountID); err == nil {
-		assets[1] = assetMod.Asset{UUID: userid, Symbol: assetSrv.HMC_COIN_SYMBOL, Address: mhcAddr}
-	}
+	// 	assets[2] = assetMod.Asset{UUID: userid, Symbol: assetSrv.USDT_COIN_SYMBOL, BaseOn: BASE_ON_BTC, Address: btcAddr}
+
+	// }
 	return assets, err
 }

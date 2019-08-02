@@ -8,10 +8,12 @@ type Exchange struct {
 	User           string
 	FromCoin       string
 	FromAddress    string
+	FromPriceCny   float64
 	ReceiveAddress string
 	ReceiveTxs     string
 	ToCoin         string
 	ToAddress      string
+	ToPriceCny     float64
 	SendTxs        string
 	SendAt         time.Time
 	Amount         float64

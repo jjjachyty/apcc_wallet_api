@@ -15,6 +15,8 @@ import (
 	"mime/multipart"
 	"regexp"
 
+	"github.com/go-xorm/xorm"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -32,19 +34,20 @@ func (UserController) Register(c *gin.Context) {
 	if err = c.BindJSON(user); err == nil {
 
 		if VerifyMobileFormat(user.Phone) && VerifyPasswdFormat(user.Password) {
-			session := utils.OpenSession()
-			defer session.Close()
-			user.UUID = utils.GetUUID()
-			user.State = utils.STATE_ENABLE
-			if err = userService.Register(user); err == nil {
-				if assets, err = walletSrv.GetAddress(user.UUID, uint32(user.AccountID)); err == nil {
-					err = assetsService.Create(assets)
-				}
-			}
 
+			err = utils.Session(func(*xorm.Session) error {
+				user.UUID = utils.GetUUID()
+				user.State = utils.STATE_ENABLE
+				if err = userService.Register(user); err == nil {
+					if assets, err = walletSrv.GetAddress(user.UUID, uint32(user.AccountID)); err == nil {
+						err = assetsService.Create(assets)
+					}
+				}
+				return err
+			})
 		}
+
 	}
-	fmt.Println(err)
 	utils.Response(c, err, nil)
 
 }
@@ -105,40 +108,30 @@ func (UserController) LoginWithSMS(c *gin.Context) {
 
 func (UserController) PayPassword(c *gin.Context) {
 	var err = errors.New("密码不能为空")
-	orgPassword := c.PostForm("orgPassword")
-	password := c.PostForm("password")
+
+	password := c.PostForm("payPassword")
 	claims := jwt.GetClaims(c)
-	var newToken string
 
-	if claims.HasPayPasswd {
-		if orgPassword != "" && password != "" {
-			var user = new(userMod.User)
-			user.Phone = claims.Phone
-			user.PayPasswd = utils.GetMD5(orgPassword)
-			if err = userService.Get(user); err == nil {
-				fmt.Println(user.UUID)
-				if user.UUID != "" {
-					user.PayPasswd = utils.GetMD5(password)
-					err = userService.Update(user)
-				} else {
-					err = errors.New("原密码错误")
-				}
-			}
-			//新增
-
-		} else {
-			err = errors.New("修改密码原密码和密码不能为空")
-		}
-		utils.Response(c, err, true)
-	} else {
-		if password != "" {
-			if err = userService.Update(&userMod.User{Phone: claims.Phone, PayPasswd: utils.GetMD5(password)}); err == nil {
-				claims.HasPayPasswd = true
-				newToken, err = jwt.NewJWT().CreateToken(*claims)
-			}
-		}
-		utils.Response(c, err, gin.H{"Token": newToken})
+	// if claims.HasPayPasswd {
+	if password != "" {
+		var user = new(userMod.User)
+		user.UUID = claims.UUID
+		user.PayPasswd = utils.GetMD5(password)
+		err = userService.Update(user)
 	}
+
+	//新增
+
+	utils.Response(c, err, true)
+	// } else {
+	// if password != "" {
+	// 	if err = userService.Update(&userMod.User{Phone: claims.Phone, PayPasswd: utils.GetMD5(password)}); err == nil {
+
+	// 		newToken, err = jwt.NewJWT().CreateToken(*claims)
+	// 	}
+	// }
+	// utils.Response(c, err, gin.H{"Token": newToken})
+	// }
 
 }
 func (UserController) LoginPassword(c *gin.Context) {

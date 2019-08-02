@@ -129,10 +129,19 @@ func CloseSessionGID(gid string) {
 }
 
 func Session(fc func(sessin *xorm.Session) error) error {
+	var err error
 	session := dbEngine.NewSession()
 
-	defer session.Close()
-	return fc(session)
+	defer func(*xorm.Session) {
+		session.Commit()
+		session.Close()
+	}(session)
+
+	if err = fc(session); err != nil {
+		session.Rollback()
+	}
+
+	return err
 }
 
 //初始化数据库引擎

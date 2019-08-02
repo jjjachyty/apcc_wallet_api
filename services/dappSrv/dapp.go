@@ -18,3 +18,10 @@ func (DappService) Page(page *utils.PageData, pars url.Values) error {
 func (DappService) Find(results interface{}, condBean interface{}) error {
 	return models.GetBeans(results, condBean)
 }
+
+func (DappService) AdvancedFind(orderDesc string, limit int, where string, whrerargs ...interface{}) ([]dappMod.Dapp, error) {
+	dapps := make([]dappMod.Dapp, 0)
+	session, _ := utils.GetSession()
+	err := session.Desc(orderDesc).Limit(limit).Where(where, whrerargs...).Find(&dapps)
+	return dapps, err
+}

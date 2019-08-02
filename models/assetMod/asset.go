@@ -1,17 +1,17 @@
 package assetMod
 
 import (
-	"apcc_wallet_api/models/dimMod"
 	"time"
 )
 
 type Asset struct {
 	UUID           string `xorm:"varchar(36) notnull unique pk 'uuid'"`
 	Symbol         string
+	BaseOn         string
 	Address        string
-	Blance         float64 `json:"Blance,string"`
-	FreezingBlance float64 `json:"FreezingBlance,string"`
-	dimMod.DimCoin `xorm:"extends"`
+	Blance         float64
+	FreezingBlance float64
+	// dimMod.DimCoin `xorm:"<-"`
 }
 
 func (Asset) TableName() string {
@@ -19,22 +19,29 @@ func (Asset) TableName() string {
 }
 
 type AssetLog struct {
-	UUID          string `xorm:"varchar(36) 'uuid'"`
-	FromAddress   string
-	FromUser      string
-	FromCoin      string
-	FromPreblance float64
-	FromBlance    float64
-	FromPriceCny  float64
-	ToUser        string
-	ToCoin        string
-	ToAddress     string
-	ToPreblance   float64
-	ToBlance      float64
-	ToPriceCny    float64
-	CreateAt      time.Time `xorm:"created"`
-	PayType       int
-	State         int
+	UUID        string `xorm:"varchar(36) 'uuid'"`
+	FromAddress string
+	FromUser    string
+	FromCoin    string
+
+	FromPriceCny float64
+	// ExchangeAddress string
+	ExchangeTxs string
+	ToUser      string
+	ToCoin      string
+	ToAddress   string
+
+	ToPriceCny float64
+	CreateAt   time.Time `xorm:"created"`
+	FromAmount float64
+	ToAmount   float64
+
+	Free        float64
+	PayType     int
+	State       int
+	SendTxs     string
+	SendAddress string
+	SendTime    time.Time `xorm:"updated"`
 }
 
 func (AssetLog) TableName() string {

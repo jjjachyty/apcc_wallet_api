@@ -40,6 +40,8 @@ func WebRouter(router *gin.Engine) {
 		{
 
 			dapp.GET("/all", dappCtl.DappController{}.Page)
+			dapp.GET("/main", dappCtl.DappController{}.Main)
+			dapp.GET("/used", dappCtl.DappController{}.Used)
 
 		}
 
@@ -58,15 +60,20 @@ func WebRouter(router *gin.Engine) {
 			assets.GET("/all", assetCtl.AssetController{}.List)
 			assets.GET("/exchangeassets", assetCtl.AssetController{}.ExchangeAssets)
 			assets.POST("/exchange", assetCtl.AssetController{}.Exchange)
+			assets.PUT("/log", assetCtl.AssetController{}.AssetLogUpdate)
 			assets.GET("/exchanges", assetCtl.AssetController{}.ExchangeList)
-			assets.GET("/free", assetCtl.AssetController{}.Free)
-			assets.GET("/exchangefree", assetCtl.AssetController{}.ExchangeFree)
+			assets.GET("/transferfreerate", assetCtl.AssetController{}.TransferFreeRate)
+			assets.GET("/exchangefreerate", assetCtl.AssetController{}.ExchangeFreeRate)
 			assets.GET("/exchangerate", assetCtl.AssetController{}.GetExchangeRate)
 
-			// assets.POST("/transfer", assetCtl.AssetController{}.Transfer)
-			assets.GET("/orders", assetCtl.AssetController{}.Orders)
+			assets.POST("/transfer", assetCtl.AssetController{}.Transfer)
+			assets.GET("/logs", assetCtl.AssetController{}.Orders)
 		}
+		// wallet := v1.Group("/wallet") //钱包
+		// {
 
+		// 	 wallet.GET("/address", assetCtl.WalletController{}.GetAddress)
+		// }
 		com.POST("/idcardrecognition", commonCtr.IDCardRecognition)
 		test := v1.Group("/test")
 		{

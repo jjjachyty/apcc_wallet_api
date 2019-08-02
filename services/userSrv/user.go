@@ -28,7 +28,7 @@ func (UserService) Get(user *userMod.User) error {
 
 func (UserService) Update(user *userMod.User) error {
 
-	return models.UpdateBean(user, userMod.User{Phone: user.Phone})
+	return models.UpdateBean(user, userMod.User{UUID: user.UUID})
 
 }
 

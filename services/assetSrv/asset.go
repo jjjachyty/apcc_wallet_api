@@ -3,8 +3,11 @@ package assetSrv
 import (
 	"apcc_wallet_api/models"
 	"apcc_wallet_api/models/assetMod"
+	"apcc_wallet_api/services/dimSrv"
 	"apcc_wallet_api/services/userSrv"
 	"apcc_wallet_api/utils"
+	"database/sql"
+	"errors"
 
 	"github.com/go-xorm/xorm"
 )
@@ -14,13 +17,15 @@ type PayTYpe int
 const (
 	HMC_COIN_SYMBOL  = "MHC"
 	USDT_COIN_SYMBOL = "USDT"
-
-	PAY_TYPE_EXCHANGE PayTYpe = 1000
+)
+const (
+	PAY_TYPE_EXCHANGE int = iota + 1000
 	PAY_TYPE_TRANSFER_INNER
 	PAY_TYPE_TRANSFER_OUTER
 	PAY_TYPE_TRANSFER_UNFREEZE
 )
 
+var dimCoinService dimSrv.DimCoinService
 var (
 	getAssetsSQL     = "select * from asset where uuid = ?"
 	assetsSQL        = "select a.*,b.name_en ,b.name_cn,b.price_cny,b.price_usd FROM asset a LEFT JOIN dim_coin b on  a.symbol = b.symbol where a.uuid=?"
@@ -73,9 +78,8 @@ func (AssetService) GetLogs(page *utils.PageData, condBean interface{}) error {
 	return models.GetBeansPage(page, condBean)
 }
 
-func (AssetService) Find(uuid string) ([]assetMod.Asset, error) {
-	var assets = make([]assetMod.Asset, 0)
-	return assets, models.SQLBeans(&assets, assetsSQL, uuid)
+func (AssetService) Find(assets *[]assetMod.Asset, condBean assetMod.Asset) error {
+	return models.GetBeans(assets, condBean)
 }
 
 func (AssetService) FindExchange(uuid string, mainCoin string, exchangeCoin string) ([]assetMod.Asset, error) {
@@ -88,21 +92,26 @@ func (AssetService) FindInnerTransfer(from, to assetMod.Asset) ([]assetMod.Asset
 	return assets, models.SQLBeans(&assets, innerTransferSQL, from.UUID, from.Address, to.Address, from.Symbol)
 }
 
-func (AssetService) ExchangeCoin(from, to assetMod.Asset, transferAmount float64) error {
-	var exchangeRate = from.PriceCny / to.PriceCny
-	var toAmount = exchangeRate * transferAmount
+//Coin2MHC 货币兑换MHC
+func (AssetService) Coin2MHC(log assetMod.AssetLog) error {
+
 	return utils.Session(func(session *xorm.Session) (err error) {
+		var result sql.Result
+		var rows int64
 		if err = session.Begin(); err == nil {
-			if _, err = session.Exec("UPDATE asset a set a.blance = ? where a.uuid = ? and a.symbol=? and a.blance=? ", from.Blance-transferAmount, from.UUID, from.Symbol, from.Blance); err == nil {
-				if _, err = session.Exec("UPDATE asset a set a.blance = ? where a.uuid = ? and a.symbol=? and a.blance=? ", to.Blance+toAmount, to.UUID, to.Symbol, to.Blance); err == nil {
-					_, err = session.Insert(assetMod.AssetLog{UUID: utils.GetUUID(), FromUser: from.UUID, FromCoin: from.Symbol, FromAddress: from.Address, FromPreblance: from.Blance, FromBlance: from.Blance - transferAmount, FromPriceCny: from.PriceCny,
-						ToUser: to.UUID, ToCoin: to.Symbol, ToAddress: to.Address, ToPreblance: to.Blance, ToBlance: to.Blance + toAmount, ToPriceCny: to.PriceCny, PayType: int(PAY_TYPE_EXCHANGE), State: utils.STATE_ENABLE})
+			if result, err = session.Exec("UPDATE asset a set a.blance = a.blance-? where a.uuid = ? and a.address=? and a.symbol=? and a.blance > ? ", log.FromAmount, log.FromUser, log.FromAddress, log.FromCoin, log.FromAmount); err == nil {
+				if rows, err = result.RowsAffected(); err == nil {
+					if rows == 1 {
+						_, err = session.Insert(log)
+					} else {
+						err = errors.New("兑换失败,请检查是否有足够的余额")
+					}
 				}
 			}
 			if err == nil {
 				err = session.Commit()
 			} else {
-				err = session.Rollback()
+				session.Rollback()
 			}
 		}
 		return err
@@ -111,28 +120,65 @@ func (AssetService) ExchangeCoin(from, to assetMod.Asset, transferAmount float64
 
 }
 
-func (AssetService) Send(from, to assetMod.Asset, amount float64, payType PayTYpe) error {
+//MHC2Coin MHC兑换货币
+func (AssetService) MHC2Coin(log assetMod.AssetLog) error {
 
 	return utils.Session(func(session *xorm.Session) (err error) {
-		var state = utils.STATE_ENABLE
-		if payType == PAY_TYPE_TRANSFER_OUTER {
-			state = utils.STATE_DISABLE
-		}
+		var result sql.Result
+		var rows int64
 		if err = session.Begin(); err == nil {
-			if _, err = session.Exec("UPDATE asset a set a.blance = ? where a.uuid = ? and a.symbol=? and a.blance=? ", from.Blance-amount, from.UUID, from.Symbol, from.Blance); err == nil {
-				if _, err = session.Exec("UPDATE asset a set a.blance = ? where a.uuid = ? and a.symbol=? and a.blance=? ", to.Blance+amount, to.UUID, to.Symbol, to.Blance); err == nil {
-					_, err = session.Insert(assetMod.AssetLog{UUID: utils.GetUUID(), FromUser: from.UUID, FromCoin: from.Symbol, FromAddress: from.Address, FromPreblance: from.Blance, FromBlance: from.Blance - amount, FromPriceCny: from.PriceCny,
-						ToUser: to.UUID, ToCoin: from.Symbol, ToAddress: to.Address, ToPreblance: to.Blance, ToBlance: to.Blance + amount, ToPriceCny: from.PriceCny, PayType: int(payType), State: state})
+			if result, err = session.Exec("UPDATE asset a set a.blance = a.blance+? where a.uuid = ? and a.address = ? and  a.symbol=? ", log.ToAmount, log.FromUser, log.ToAddress, log.ToCoin); err == nil {
+				if rows, err = result.RowsAffected(); err == nil {
+					if rows == 1 {
+						_, err = session.Insert(log)
+					} else {
+						err = errors.New("兑换失败,请检查是否有足够的余额")
+					}
 				}
 			}
 			if err == nil {
 				err = session.Commit()
 			} else {
-				err = session.Rollback()
+				session.Rollback()
 			}
 		}
 		return err
 
 	})
 
+}
+
+func (AssetService) Send(log assetMod.AssetLog) error {
+
+	return utils.Session(func(session *xorm.Session) (err error) {
+		var result sql.Result
+		var rows int64
+		if err = session.Begin(); err == nil {
+			if result, err = session.Exec("UPDATE asset a set a.blance = a.blance-? where a.uuid = ? and a.symbol=? and a.blance>? ", log.FromAmount, log.FromUser, log.FromCoin, log.FromAmount); err == nil {
+				if rows, err = result.RowsAffected(); err == nil {
+					if rows == 1 {
+						if _, err = session.Exec("UPDATE asset a set a.blance = a.blance+? where a.address = ? and a.symbol=? ", log.ToAmount, log.ToAddress, log.FromCoin, log.ToAmount); err == nil {
+							_, err = session.Insert(log)
+						}
+
+					} else {
+						err = errors.New("转账失败,请检查是否有足够的余额")
+					}
+				}
+			}
+
+			if err == nil {
+				err = session.Commit()
+			} else {
+				session.Rollback()
+			}
+		}
+		return err
+
+	})
+
+}
+
+func (AssetService) UpdateLogs(log assetMod.AssetLog) error {
+	return models.UpdateBean(log, assetMod.Asset{UUID: log.UUID})
 }

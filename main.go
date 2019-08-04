@@ -5,6 +5,8 @@ import (
 	"apcc_wallet_api/router"
 	"apcc_wallet_api/utils"
 
+	_ "apcc_wallet_api/exchange"
+
 	"github.com/gin-gonic/gin"
 )
 

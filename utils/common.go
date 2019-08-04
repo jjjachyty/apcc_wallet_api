@@ -5,6 +5,9 @@ import (
 	"crypto/md5"
 	"encoding/gob"
 	"encoding/hex"
+	"net"
+	"os"
+	"os/user"
 	"reflect"
 	"runtime"
 
@@ -90,4 +93,36 @@ func GetMD5(orgStr string) string {
 	h := md5.New()
 	h.Write([]byte(orgStr))
 	return hex.EncodeToString(h.Sum(nil))
+}
+func GetHostName() string {
+	host, err := os.Hostname()
+	if err != nil {
+		SysLog.Errorln("获取本机名称错误")
+	}
+	return host
+}
+func GetUserName() string {
+	if u, err := user.Current(); err == nil {
+		return u.Username
+	}
+	return ""
+
+}
+
+func GetIP() string {
+	addrs, err := net.InterfaceAddrs()
+
+	if err != nil {
+		SysLog.Errorf("获取本机IP错误 %v", err)
+	}
+
+	for _, address := range addrs {
+		// 检查ip地址判断是否回环地址
+		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
+			if ipnet.IP.To4() != nil {
+				return ipnet.IP.String()
+			}
+		}
+	}
+	return "0.0.0.0"
 }

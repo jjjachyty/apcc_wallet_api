@@ -20,8 +20,7 @@ var mhcClient *ethclient.Client
 var chainID *big.Int
 var gasLimit = uint64(21000) // in units
 
-func SendMHC(amount *big.Int, toAddressHex string) (string, string, error) {
-	var err error
+func SendMHC(amount *big.Int, toAddressHex string) (address string, txs string, err error) {
 	var privateKey *ecdsa.PrivateKey
 	var fromAddress common.Address
 	var nonce uint64
@@ -35,7 +34,8 @@ func SendMHC(amount *big.Int, toAddressHex string) (string, string, error) {
 					tx := types.NewTransaction(nonce, toAddress, amount, gasLimit, gasPrice, nil)
 					if signedTx, err = types.SignTx(tx, types.NewEIP155Signer(chainID), privateKey); err == nil {
 						if err = mhcClient.SendTransaction(context.Background(), signedTx); err == nil {
-							return fromAddress.Hex(), signedTx.Hash().Hex(), nil
+							address, txs, err = fromAddress.Hex(), signedTx.Hash().Hex(), nil
+							return
 						}
 
 					}
@@ -45,6 +45,34 @@ func SendMHC(amount *big.Int, toAddressHex string) (string, string, error) {
 		}
 	}
 	return "", "", err
+}
+
+func SendMHCByPrivateKey(privateKeyHex string, amount *big.Int, toAddressHex string) (address string, tx *types.Transaction, err error) {
+	var privateKey *ecdsa.PrivateKey
+	var fromAddress common.Address
+	var nonce uint64
+	var gasPrice *big.Int
+	// var tx *types.Transaction
+	toAddress := common.HexToAddress(toAddressHex)
+	if privateKey, err = crypto.HexToECDSA(privateKeyHex); err == nil {
+		if fromAddress, err = getETHAddressByPK(privateKey); err == nil {
+			if nonce, err = mhcClient.PendingNonceAt(context.Background(), fromAddress); err == nil {
+				if gasPrice, err = mhcClient.SuggestGasPrice(context.Background()); err == nil {
+					tx = types.NewTransaction(nonce, toAddress, amount, gasLimit, gasPrice, nil)
+					if tx, err = types.SignTx(tx, types.NewEIP155Signer(chainID), privateKey); err == nil {
+						if err = mhcClient.SendTransaction(context.Background(), tx); err == nil {
+
+							address, err = fromAddress.Hex(), nil
+							return
+						}
+
+					}
+				}
+
+			}
+		}
+	}
+	return "", nil, err
 }
 
 func GetTxsByHashHex(txsHex string) (*types.Transaction, bool, error) {

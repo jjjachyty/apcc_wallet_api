@@ -1,5 +1,5 @@
 #开发环境还是生产环境
-environment = "production1" #production 生产
+environment = "dev" #production 生产
 
 [database]
 type="mysql"
@@ -29,8 +29,11 @@ formatter="json"  #json text
 [cors]
 origin="*"
 #存储过程调用RPC服务
-
-
+[nsq]
+nsqdserver="119.3.108.19"
+nsqdport="4150"
+lookupdserver="119.3.108.19"
+lookupdport="4161"
 #后端端口号
 [port]
 port=":9090"

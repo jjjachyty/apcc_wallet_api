@@ -69,7 +69,14 @@ func (AssetService) Create(assets []assetMod.Asset) error {
 
 	return models.Create(&assets)
 }
+func (AssetService) Update(assets []assetMod.Asset) error {
+	return models.Create(&assets)
+}
 
+func (AssetService) CreateLog(assetsLog []assetMod.AssetLog) error {
+
+	return models.Create(&assetsLog)
+}
 func (AssetService) Get(assets *assetMod.Asset) error {
 	return models.SQLBean(assets, getAssetsSQL, assets.UUID)
 }
@@ -132,7 +139,7 @@ func (AssetService) MHC2Coin(log assetMod.AssetLog) error {
 					if rows == 1 {
 						_, err = session.Insert(log)
 					} else {
-						err = errors.New("兑换失败,请检查是否有足够的余额")
+						err = errors.New("兑换失败,请检查账户是否正常")
 					}
 				}
 			}

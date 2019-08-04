@@ -14,6 +14,7 @@ type tomlConfig struct {
 	Auth        auth     `toml:"auth"`
 	Logs        logs     `toml:"logs"`
 	Cors        cors     `toml:"cors"`
+	Nsq         nsq      `toml:"nsq"`
 	Produrce    produrce `toml:"produrce"`
 	Port        port     `toml:"port"`
 }
@@ -53,6 +54,12 @@ type database struct {
 	NlsLang    string
 }
 
+type nsq struct {
+	NsqdServer    string
+	NsqdPort      string
+	LookupdServer string
+	LookupdPort   string
+}
 type auth struct {
 	Server string
 }
@@ -95,6 +102,7 @@ func InitAll() {
 	LoadToml()
 
 	InitDB()
+	InitNsq()
 
 }
 
@@ -129,4 +137,8 @@ func GetCacheCfg() cache {
 //GetCacheCfg 获取端口配置信息
 func GetPort() port {
 	return config.Port
+}
+
+func GetNsq() nsq {
+	return config.Nsq
 }

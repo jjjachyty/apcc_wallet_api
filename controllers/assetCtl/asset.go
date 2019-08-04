@@ -12,6 +12,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"math/big"
 	"strconv"
 
@@ -43,6 +44,60 @@ func (AssetController) ExchangeAssets(c *gin.Context) {
 	utils.Response(c, err, assets)
 }
 
+//MHC2USDTExchange MHC 兑换USDT
+func (AssetController) MHC2USDTExchange(c *gin.Context) {
+	var err error
+	var log assetMod.AssetLog
+
+	privateKey, hasPrivateKey := c.GetPostForm("privateKey")
+	exchangeAddress, hasExchangeAddress := c.GetPostForm("exchangeAddress")
+	toAddress, hasToAddress := c.GetPostForm("toAddress")
+	amountStr, hasAmount := c.GetPostForm("amount")
+	log.ToCoin, log.FromCoin = "USDT", "MHC"
+	log.UUID = utils.GetUUID()
+	fmt.Println("-----", privateKey, exchangeAddress, toAddress, amountStr)
+	if hasPrivateKey && hasAmount && hasExchangeAddress && hasToAddress {
+		fromPriceCny := dimCoinService.GetCoin(log.FromCoin).PriceCny
+		toPriceCny := dimCoinService.GetCoin(log.ToCoin).PriceCny
+		exchangeRate := fromPriceCny / toPriceCny
+		if bigAmount, ok := big.NewFloat(0).SetString(amountStr); ok {
+			if exchangeFree, ok := dimCoinService.GetExchangeFree("MHC"); ok {
+				amount, _ := bigAmount.Float64()
+				usdtAmount := (amount * exchangeFree) * exchangeRate
+				log.FromAmount = amount
+				log.FromUser = jwt.GetClaims(c).UUID
+				log.ToAddress = toAddress
+				log.ToAmount = usdtAmount
+				log.Free = exchangeFree
+				log.FromPriceCny = fromPriceCny
+				log.ToPriceCny = toPriceCny
+				log.PayType = int(assetSrv.PAY_TYPE_EXCHANGE)
+				//处理手续费  原始金额 +手续费
+				bigAmount = new(big.Float).Add(bigAmount, big.NewFloat(exchangeFree))
+
+				amoutWeiStr := new(big.Float).Mul(bigAmount, big.NewFloat(math.Pow10(18))).Text('f', 0)
+				if mhcAmount, ok := new(big.Int).SetString(amoutWeiStr, 0); ok {
+					if address, tx, err := walletSrv.SendMHCByPrivateKey(privateKey, mhcAmount, exchangeAddress); err == nil {
+						log.ExchangeTxs = tx.Hash().Hex()
+						log.FromAddress = address
+						log.SendAddress = address
+						log.Free += float64(tx.GasPrice().Int64()) * float64(tx.Gas()) / 1000000000000000000
+						log.State = utils.STATE_ENABLE
+						logJSONByts, _ := json.Marshal(log)
+						//发布兑换消息
+						utils.NsqPublish("MHC2USDT", logJSONByts)
+					}
+
+				}
+
+			}
+
+		}
+	}
+	utils.Response(c, err, log)
+
+}
+
 //Exchange BDCoin 转移到BlockCoin
 func (AssetController) Exchange(c *gin.Context) {
 	var err error
@@ -60,19 +115,17 @@ func (AssetController) Exchange(c *gin.Context) {
 		exchangeRate := fromPriceCny / toPriceCny
 		log.FromPriceCny = fromPriceCny
 		log.ToPriceCny = toPriceCny
-		exchangeFreeRate, _ := dimCoinService.GetExchangeFreeRate(log.FromCoin)
+		exchangeFree, _ := dimCoinService.GetExchangeFree(log.FromCoin)
 		log.PayType = int(assetSrv.PAY_TYPE_EXCHANGE)
 		// // } else {
 		// // 	err = errors.New("支付密码不正确")
 		// // }
-		fmt.Println("txs", log.ExchangeTxs)
-		fmt.Println("log", log)
-		fmt.Println(log.FromCoin + log.ToCoin)
+
 		switch exgType := log.FromCoin + log.ToCoin; exgType {
 		case "MHCUSDT":
-			fmt.Println(walletSrv.GetTxsByHashHex(log.ExchangeTxs))
-			log.ToAmount = (log.FromAmount * (1 - exchangeFreeRate)) * exchangeRate
-			log.Free = log.FromAmount * exchangeFreeRate
+
+			log.ToAmount = (log.FromAmount - exchangeFree) * exchangeRate
+			log.Free = exchangeFree
 
 			if tx, _, err := walletSrv.GetTxsByHashHex(log.ExchangeTxs); err == nil && tx != nil {
 				log.State = utils.STATE_ENABLE
@@ -81,14 +134,14 @@ func (AssetController) Exchange(c *gin.Context) {
 
 		case "USDTMHC":
 			var toAmount *big.Int
-			mhcAmount := (log.FromAmount * (1 - exchangeFreeRate)) * exchangeRate * 1000000
+			mhcAmount := (log.FromAmount - exchangeFree) * exchangeRate * 1000000
 			mhcAmountStr := strconv.FormatFloat(mhcAmount, 'f', 0, 64)
 			toAmount, ok = big.NewInt(0).SetString(mhcAmountStr, 0)
 			toAmount = new(big.Int).Mul(toAmount, big.NewInt(1000000000000))
 			fmt.Println(toAmount.String())
 
 			log.ToAmount = mhcAmount
-			log.Free = (log.FromAmount * exchangeFreeRate)
+			log.Free = exchangeFree
 			fmt.Println("ToAmount", ok, toAmount.String(), log.ToAmount)
 			if ok {
 				if address, txs, err := walletSrv.SendMHC(toAmount, log.ToAddress); err == nil && txs != "" {
@@ -155,9 +208,9 @@ func (AssetController) Transfer(c *gin.Context) {
 		if payPass, err = userService.CheckPayPasswd(user); payPass {
 			if err = json.Unmarshal([]byte(log.(string)), &assetLog); err == nil {
 				var fromPriceCny = dimCoinService.GetCoin(assetLog.FromCoin).PriceCny
-				var freeRate, _ = dimCoinService.GetFreeRate(assetLog.FromCoin)
+				var free, _ = dimCoinService.GetFree(assetLog.FromCoin)
 				assetLog.FromPriceCny = fromPriceCny
-				assetLog.Free = assetLog.FromAmount * freeRate
+				assetLog.Free = free
 				//支付密码通过
 				switch assetLog.PayType {
 				case assetSrv.PAY_TYPE_TRANSFER_INNER: //内部转账
@@ -174,8 +227,8 @@ func (AssetController) Transfer(c *gin.Context) {
 					// }
 				case assetSrv.PAY_TYPE_TRANSFER_OUTER: // 转出平台
 
-					if freeRate, ok := dimCoinService.GetFreeRate(assetLog.FromCoin); ok {
-						assetLog.ToAmount = assetLog.FromAmount * (1 - freeRate)
+					if free, ok := dimCoinService.GetFree(assetLog.FromCoin); ok {
+						assetLog.ToAmount = assetLog.FromAmount - free
 						//转账到外部地址
 						err = assetService.Send(assetLog)
 					} else {
@@ -221,12 +274,12 @@ func (AssetController) Orders(c *gin.Context) {
 	utils.Response(c, err, page)
 }
 
-func (AssetController) TransferFreeRate(c *gin.Context) {
+func (AssetController) TransferFree(c *gin.Context) {
 	var err error
 	var free float64
 	symbol, ok := c.GetQuery("symbol")
 	if ok {
-		if free, ok = dimCoinService.GetFreeRate(symbol); !ok {
+		if free, ok = dimCoinService.GetFree(symbol); !ok {
 			err = errors.New("未找到币种的手续费")
 		}
 	} else {
@@ -236,14 +289,14 @@ func (AssetController) TransferFreeRate(c *gin.Context) {
 }
 
 //获取兑换费用
-func (AssetController) ExchangeFreeRate(c *gin.Context) {
+func (AssetController) ExchangeFree(c *gin.Context) {
 	var err error
 	var exchangeFree float64
 	mainCoin, ok := c.GetQuery("mainCoin")
 	// exchange, exchangeOk := c.GetQuery("exchangeCoin")
 
 	if ok {
-		if exchangeFree, ok = dimCoinService.GetExchangeFreeRate(mainCoin); !ok {
+		if exchangeFree, ok = dimCoinService.GetExchangeFree(mainCoin); !ok {
 			err = errors.New("币种不存在")
 		}
 	} else {

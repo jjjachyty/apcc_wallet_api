@@ -17,18 +17,18 @@ func WebRouter(router *gin.Engine) {
 	v1 := router.Group("/api/wallet/v1/") //版本
 	{
 
-		com := v1.Group("/com") //参数模块
+		com := v1.Group("/com") //公共
 		{
 			com.Any("/sms", commonCtr.SMSController{}.Controller)
 			com.Any("/captcha", commonCtr.CaptchaController{}.Controller)
 			com.Any("/version", commonCtr.GetMaxVersion)
 		}
 
-		dim := v1.Group("/dim")
+		dim := v1.Group("/dim") //纬度
 		{
 			dim.GET("/coins", dimCtr.DimCoinController{}.All)
 		}
-		auth := v1.Group("/auth") //参数模块
+		auth := v1.Group("/auth") //权限
 		{
 			auth.POST("/register", userCtr.UserController{}.Register)
 			auth.POST("/loginwithpw", userCtr.UserController{}.LoginWithPW)
@@ -36,7 +36,7 @@ func WebRouter(router *gin.Engine) {
 			auth.POST("/refreshtoken", jwt.RefreshToken)
 
 		}
-		dapp := v1.Group("/dapp") //参数模块
+		dapp := v1.Group("/dapp") //dapp
 		{
 
 			dapp.GET("/all", dappCtl.DappController{}.Page)
@@ -46,7 +46,7 @@ func WebRouter(router *gin.Engine) {
 		}
 
 		v1.Use(jwt.JWTAuth())
-		user := v1.Group("/user") //参数模块
+		user := v1.Group("/user") //用户
 		{
 			user.POST("/paypasswd", userCtr.UserController{}.PayPassword)
 			user.POST("/loginpasswd", userCtr.UserController{}.LoginPassword)
@@ -54,7 +54,12 @@ func WebRouter(router *gin.Engine) {
 			user.POST("/idcard", userCtr.UserController{}.IDCard)
 
 		}
-		assets := v1.Group("/assets") //参数模块
+		//货币兑换
+		exchange := v1.Group("/exchange")
+		{
+			exchange.POST("/MHC2USDT", assetCtl.AssetController{}.MHC2USDTExchange)
+		}
+		assets := v1.Group("/assets") //资产
 		{
 
 			assets.GET("/all", assetCtl.AssetController{}.List)
@@ -62,8 +67,8 @@ func WebRouter(router *gin.Engine) {
 			assets.POST("/exchange", assetCtl.AssetController{}.Exchange)
 			assets.PUT("/log", assetCtl.AssetController{}.AssetLogUpdate)
 			assets.GET("/exchanges", assetCtl.AssetController{}.ExchangeList)
-			assets.GET("/transferfreerate", assetCtl.AssetController{}.TransferFreeRate)
-			assets.GET("/exchangefreerate", assetCtl.AssetController{}.ExchangeFreeRate)
+			assets.GET("/transferfree", assetCtl.AssetController{}.TransferFree)
+			assets.GET("/exchangefree", assetCtl.AssetController{}.ExchangeFree)
 			assets.GET("/exchangerate", assetCtl.AssetController{}.GetExchangeRate)
 
 			assets.POST("/transfer", assetCtl.AssetController{}.Transfer)

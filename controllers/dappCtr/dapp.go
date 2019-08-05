@@ -1,4 +1,4 @@
-package dappCtl
+package dappCtr
 
 import (
 	"apcc_wallet_api/middlewares/jwt"

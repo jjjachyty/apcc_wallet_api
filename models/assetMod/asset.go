@@ -18,32 +18,28 @@ func (Asset) TableName() string {
 	return "asset"
 }
 
-type AssetLog struct {
-	UUID        string `xorm:"varchar(36) 'uuid'"`
+type TransferLog struct {
+	UUID        string `xorm:"varchar(36)  notnull unique pk  'uuid'"`
 	FromAddress string
 	FromUser    string
-	FromCoin    string
+	Coin        string
 
-	FromPriceCny float64
-	// ExchangeAddress string
-	ExchangeTxs string
-	ToUser      string
-	ToCoin      string
-	ToAddress   string
+	ToUser string
 
-	ToPriceCny float64
-	CreateAt   time.Time `xorm:"created"`
-	FromAmount float64
-	ToAmount   float64
+	ToAddress string
+
+	PriceCny float64
+	CreateAt time.Time `xorm:"created"`
+	Amount   float64
 
 	Free        float64
 	PayType     int
 	State       int
 	SendTxs     string
 	SendAddress string
-	SendTime    time.Time `xorm:"updated"`
+	SendAt      time.Time
 }
 
-func (AssetLog) TableName() string {
-	return "asset_log"
+func (TransferLog) TableName() string {
+	return "transfer_log"
 }

@@ -1,3 +1,3 @@
-package assetCtl
+package assetCtr
 
 type WalletController struct{}

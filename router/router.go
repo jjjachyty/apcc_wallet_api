@@ -1,10 +1,12 @@
 package router
 
 import (
-	"apcc_wallet_api/controllers/assetCtl"
+	"apcc_wallet_api/controllers/assetCtr"
 	"apcc_wallet_api/controllers/commonCtr"
-	"apcc_wallet_api/controllers/dappCtl"
+	"apcc_wallet_api/controllers/dappCtr"
 	"apcc_wallet_api/controllers/dimCtr"
+	"apcc_wallet_api/controllers/exchangeCtr"
+	"apcc_wallet_api/controllers/transferCtr"
 	"apcc_wallet_api/controllers/userCtr"
 	"apcc_wallet_api/middlewares/jwt"
 
@@ -39,9 +41,9 @@ func WebRouter(router *gin.Engine) {
 		dapp := v1.Group("/dapp") //dapp
 		{
 
-			dapp.GET("/all", dappCtl.DappController{}.Page)
-			dapp.GET("/main", dappCtl.DappController{}.Main)
-			dapp.GET("/used", dappCtl.DappController{}.Used)
+			dapp.GET("/all", dappCtr.DappController{}.Page)
+			dapp.GET("/main", dappCtr.DappController{}.Main)
+			dapp.GET("/used", dappCtr.DappController{}.Used)
 
 		}
 
@@ -57,22 +59,30 @@ func WebRouter(router *gin.Engine) {
 		//货币兑换
 		exchange := v1.Group("/exchange")
 		{
-			exchange.POST("/MHC2USDT", assetCtl.AssetController{}.MHC2USDTExchange)
+			exchange.POST("/mhc2usdt", exchangeCtr.MHCExchangeController{}.USDT)
+			exchange.POST("/usdt2mhc", exchangeCtr.USDTExchangeController{}.MHC)
+
 		}
+		transfer := v1.Group("/transfer")
+		{
+			transfer.POST("/usdt", transferCtr.USDTTransferController{}.Transfer)
+
+		}
+
 		assets := v1.Group("/assets") //资产
 		{
 
-			assets.GET("/all", assetCtl.AssetController{}.List)
-			assets.GET("/exchangeassets", assetCtl.AssetController{}.ExchangeAssets)
-			assets.POST("/exchange", assetCtl.AssetController{}.Exchange)
-			assets.PUT("/log", assetCtl.AssetController{}.AssetLogUpdate)
-			assets.GET("/exchanges", assetCtl.AssetController{}.ExchangeList)
-			assets.GET("/transferfree", assetCtl.AssetController{}.TransferFree)
-			assets.GET("/exchangefree", assetCtl.AssetController{}.ExchangeFree)
-			assets.GET("/exchangerate", assetCtl.AssetController{}.GetExchangeRate)
+			assets.GET("/all", assetCtr.AssetController{}.List)
+			assets.GET("/exchangeassets", assetCtr.AssetController{}.ExchangeAssets)
+			// assets.POST("/exchange", assetCtl.AssetController{}.Exchange)
+			// assets.PUT("/log", assetCtr.AssetController{}.AssetLogUpdate)
+			assets.GET("/exchanges", assetCtr.AssetController{}.ExchangeList)
+			assets.GET("/transferfree", assetCtr.AssetController{}.TransferFree)
+			assets.GET("/exchangefree", assetCtr.AssetController{}.ExchangeFree)
+			assets.GET("/exchangerate", assetCtr.AssetController{}.GetExchangeRate)
 
-			assets.POST("/transfer", assetCtl.AssetController{}.Transfer)
-			assets.GET("/logs", assetCtl.AssetController{}.Orders)
+			// assets.POST("/transfer", assetCtr.AssetController{}.Transfer)
+			assets.GET("/logs", assetCtr.AssetController{}.Orders)
 		}
 		// wallet := v1.Group("/wallet") //钱包
 		// {

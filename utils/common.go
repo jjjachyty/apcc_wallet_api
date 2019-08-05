@@ -103,7 +103,7 @@ func GetHostName() string {
 }
 func GetUserName() string {
 	if u, err := user.Current(); err == nil {
-		return u.Username
+		return u.Name
 	}
 	return ""
 

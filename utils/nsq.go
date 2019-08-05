@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"fmt"
 	"time"
 
 	nsq_client "github.com/nsqio/go-nsq"
@@ -42,23 +43,28 @@ func (h *ConsumerHandle) HandleMessage(message *nsq_client.Message) error {
 //ReadMessage 获取NSQ消息
 func ReadMessage(topicName string, handler func(data []byte) error) {
 
-	defer func() {
-		if err := recover(); err != nil {
-			SysLog.Errorf("接收NSQ出错 %v", err)
-		}
-	}()
+	// defer func() {
+	// 	if err := recover(); err != nil {
+
+	// 		SysLog.Errorf("接收NSQ出错 %v", err)
+	// 	}
+	// }()
 
 	config := nsq_client.NewConfig()
 	nsqCfg := GetNsq()
 	config.MaxInFlight = 1000
 	config.MaxBackoffDuration = 500 * time.Second
-	q, _ := nsq_client.NewConsumer(topicName, GetIP()+"_"+GetUserName(), config)
-
+	chanID := GetIP() + "_" + GetUserName()
+	SysLog.Debugf("开始监听NSQ %s %s", topicName, chanID)
+	q, err := nsq_client.NewConsumer(topicName, chanID, config)
+	if err != nil {
+		fmt.Println(err)
+	}
 	h := &ConsumerHandle{q: q, handler: handler}
 	q.AddHandler(h)
 	addr := nsqCfg.LookupdServer + ":" + nsqCfg.LookupdPort
 
-	err := q.ConnectToNSQLookupd(addr)
+	err = q.ConnectToNSQLookupd(addr)
 	if err != nil {
 		SysLog.Errorf("连接NSQLookupd错误 %v", err)
 	}

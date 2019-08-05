@@ -3,7 +3,6 @@ package walletSrv
 import (
 	"context"
 	"crypto/ecdsa"
-	"errors"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/core/types"
@@ -28,14 +27,14 @@ func SendMHC(amount *big.Int, toAddressHex string) (address string, txs string, 
 	var signedTx *types.Transaction
 	toAddress := common.HexToAddress(toAddressHex)
 	if privateKey, err = crypto.HexToECDSA(privateKeyHex); err == nil {
-		if fromAddress, err = getETHAddressByPK(privateKey); err == nil {
+		if fromAddress, err = GetETHAddressByPK(privateKey); err == nil {
 			if nonce, err = mhcClient.PendingNonceAt(context.Background(), fromAddress); err == nil {
 				if gasPrice, err = mhcClient.SuggestGasPrice(context.Background()); err == nil {
 					tx := types.NewTransaction(nonce, toAddress, amount, gasLimit, gasPrice, nil)
 					if signedTx, err = types.SignTx(tx, types.NewEIP155Signer(chainID), privateKey); err == nil {
 						if err = mhcClient.SendTransaction(context.Background(), signedTx); err == nil {
 							address, txs, err = fromAddress.Hex(), signedTx.Hash().Hex(), nil
-							return
+							return address, txs, err
 						}
 
 					}
@@ -55,7 +54,7 @@ func SendMHCByPrivateKey(privateKeyHex string, amount *big.Int, toAddressHex str
 	// var tx *types.Transaction
 	toAddress := common.HexToAddress(toAddressHex)
 	if privateKey, err = crypto.HexToECDSA(privateKeyHex); err == nil {
-		if fromAddress, err = getETHAddressByPK(privateKey); err == nil {
+		if fromAddress, err = GetETHAddressByPK(privateKey); err == nil {
 			if nonce, err = mhcClient.PendingNonceAt(context.Background(), fromAddress); err == nil {
 				if gasPrice, err = mhcClient.SuggestGasPrice(context.Background()); err == nil {
 					tx = types.NewTransaction(nonce, toAddress, amount, gasLimit, gasPrice, nil)
@@ -93,12 +92,30 @@ func init() {
 	chainID = id
 }
 
-func getETHAddressByPK(privateKey *ecdsa.PrivateKey) (common.Address, error) {
-	var err error
-	publicKey := privateKey.Public()
-	publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
-	if !ok {
-		err = errors.New("获取地址失败")
+func GetETHAddressByPKHex(privateKeyHex string) (address common.Address, err error) {
+	var privateKey *ecdsa.PrivateKey
+
+	if privateKey, err = crypto.HexToECDSA(privateKeyHex); err == nil {
+		return GetETHAddressByPK(privateKey)
 	}
-	return crypto.PubkeyToAddress(*publicKeyECDSA), err
+	return
+}
+func GetETHAddressByPK(privateKey *ecdsa.PrivateKey) (address common.Address, err error) {
+	publicKey := privateKey.Public()
+	if publicKey, ok := publicKey.(*ecdsa.PublicKey); ok {
+		return crypto.PubkeyToAddress(*publicKey), nil
+	}
+
+	return
+}
+
+func GetMHCBalance(address string) (*big.Int, error) {
+	return mhcClient.BalanceAt(context.Background(), common.HexToAddress(address), nil)
+}
+
+func GetMHCGas() *big.Int {
+	if gasPrice, err := mhcClient.SuggestGasPrice(context.Background()); err == nil {
+		return new(big.Int).Mul(gasPrice, big.NewInt(2100))
+	}
+	return new(big.Int).Mul(big.NewInt(100000000000), big.NewInt(2100))
 }

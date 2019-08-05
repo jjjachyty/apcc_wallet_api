@@ -73,14 +73,16 @@ func (AssetService) Update(assets []assetMod.Asset) error {
 	return models.Create(&assets)
 }
 
-func (AssetService) CreateLog(assetsLog []assetMod.AssetLog) error {
+func (AssetService) CreateLog(assetsLog assetMod.TransferLog) error {
 
 	return models.Create(&assetsLog)
 }
 func (AssetService) Get(assets *assetMod.Asset) error {
 	return models.SQLBean(assets, getAssetsSQL, assets.UUID)
 }
-
+func (AssetService) GetBean(assets *assetMod.Asset) error {
+	return models.GetBean(assets)
+}
 func (AssetService) GetLogs(page *utils.PageData, condBean interface{}) error {
 	return models.GetBeansPage(page, condBean)
 }
@@ -99,72 +101,16 @@ func (AssetService) FindInnerTransfer(from, to assetMod.Asset) ([]assetMod.Asset
 	return assets, models.SQLBeans(&assets, innerTransferSQL, from.UUID, from.Address, to.Address, from.Symbol)
 }
 
-//Coin2MHC 货币兑换MHC
-func (AssetService) Coin2MHC(log assetMod.AssetLog) error {
+func (AssetService) SendInner(log assetMod.TransferLog) error {
 
 	return utils.Session(func(session *xorm.Session) (err error) {
 		var result sql.Result
 		var rows int64
 		if err = session.Begin(); err == nil {
-			if result, err = session.Exec("UPDATE asset a set a.blance = a.blance-? where a.uuid = ? and a.address=? and a.symbol=? and a.blance > ? ", log.FromAmount, log.FromUser, log.FromAddress, log.FromCoin, log.FromAmount); err == nil {
+			if result, err = session.Exec("UPDATE asset a set a.blance = a.blance-? where a.uuid = ? and a.address=? and a.symbol=? and a.blance>? ", log.Amount-log.Free, log.FromUser, log.FromAddress, log.Coin, log.Amount-log.Free); err == nil {
 				if rows, err = result.RowsAffected(); err == nil {
 					if rows == 1 {
-						_, err = session.Insert(log)
-					} else {
-						err = errors.New("兑换失败,请检查是否有足够的余额")
-					}
-				}
-			}
-			if err == nil {
-				err = session.Commit()
-			} else {
-				session.Rollback()
-			}
-		}
-		return err
-
-	})
-
-}
-
-//MHC2Coin MHC兑换货币
-func (AssetService) MHC2Coin(log assetMod.AssetLog) error {
-
-	return utils.Session(func(session *xorm.Session) (err error) {
-		var result sql.Result
-		var rows int64
-		if err = session.Begin(); err == nil {
-			if result, err = session.Exec("UPDATE asset a set a.blance = a.blance+? where a.uuid = ? and a.address = ? and  a.symbol=? ", log.ToAmount, log.FromUser, log.ToAddress, log.ToCoin); err == nil {
-				if rows, err = result.RowsAffected(); err == nil {
-					if rows == 1 {
-						_, err = session.Insert(log)
-					} else {
-						err = errors.New("兑换失败,请检查账户是否正常")
-					}
-				}
-			}
-			if err == nil {
-				err = session.Commit()
-			} else {
-				session.Rollback()
-			}
-		}
-		return err
-
-	})
-
-}
-
-func (AssetService) Send(log assetMod.AssetLog) error {
-
-	return utils.Session(func(session *xorm.Session) (err error) {
-		var result sql.Result
-		var rows int64
-		if err = session.Begin(); err == nil {
-			if result, err = session.Exec("UPDATE asset a set a.blance = a.blance-? where a.uuid = ? and a.symbol=? and a.blance>? ", log.FromAmount, log.FromUser, log.FromCoin, log.FromAmount); err == nil {
-				if rows, err = result.RowsAffected(); err == nil {
-					if rows == 1 {
-						if _, err = session.Exec("UPDATE asset a set a.blance = a.blance+? where a.address = ? and a.symbol=? ", log.ToAmount, log.ToAddress, log.FromCoin, log.ToAmount); err == nil {
+						if _, err = session.Exec("UPDATE asset a set a.blance = a.blance+? where a.address = ? and a.symbol=? ", log.Amount-log.Free, log.ToAddress, log.Coin); err == nil {
 							_, err = session.Insert(log)
 						}
 
@@ -186,6 +132,33 @@ func (AssetService) Send(log assetMod.AssetLog) error {
 
 }
 
-func (AssetService) UpdateLogs(log assetMod.AssetLog) error {
+func (AssetService) SendOuter(log assetMod.TransferLog) error {
+
+	return utils.Session(func(session *xorm.Session) (err error) {
+		var result sql.Result
+		var rows int64
+		if err = session.Begin(); err == nil {
+			if result, err = session.Exec("UPDATE asset a set a.blance = a.blance-? where a.uuid = ? and a.address=? and a.symbol=? and a.blance>? ", log.Amount, log.FromUser, log.FromAddress, log.Coin, log.Amount); err == nil {
+				if rows, err = result.RowsAffected(); err == nil {
+					if rows == 1 {
+						_, err = session.Insert(log)
+					} else {
+						err = errors.New("转账失败,请检查是否有足够的余额")
+					}
+				}
+			}
+
+			if err == nil {
+				err = session.Commit()
+			} else {
+				session.Rollback()
+			}
+		}
+		return err
+
+	})
+
+}
+func (AssetService) UpdateLogs(log assetMod.TransferLog) error {
 	return models.UpdateBean(log, assetMod.Asset{UUID: log.UUID})
 }

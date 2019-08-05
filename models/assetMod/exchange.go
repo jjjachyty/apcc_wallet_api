@@ -3,22 +3,23 @@ package assetMod
 import "time"
 
 //Exchange 币种兑换表
-type Exchange struct {
-	UUID           string `xorm:"varchar(36) 'uuid'"`
-	User           string
-	FromCoin       string
-	FromAddress    string
-	FromPriceCny   float64
-	ReceiveAddress string
-	ReceiveTxs     string
-	ToCoin         string
-	ToAddress      string
-	ToPriceCny     float64
-	SendTxs        string
-	SendAt         time.Time
-	Amount         float64
-	Free           float64
-	Rate           float64
-	CreateAt       time.Time `xorm:"created"`
-	State          int
+type ExchangeLog struct {
+	UUID         string `xorm:"varchar(36)  notnull unique pk  'uuid'"`
+	User         string
+	FromCoin     string
+	FromAddress  string
+	FromPriceCny float64
+	FromAmount   float64
+
+	ToCoin     string
+	ToAddress  string
+	ToPriceCny float64
+	ToAmount   float64
+
+	SendAddress string
+	SendTxs     string
+	SendAt      time.Time
+	Free        float64
+	CreateAt    time.Time `xorm:"created"`
+	State       int
 }

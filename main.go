@@ -1,16 +1,22 @@
 package main
 
 import (
+	"apcc_wallet_api/handler"
 	"apcc_wallet_api/middlewares/cors"
 	"apcc_wallet_api/router"
+	"apcc_wallet_api/services/walletSrv"
 	"apcc_wallet_api/utils"
-
-	_ "apcc_wallet_api/handler"
 
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
+	//初始化MHC USDT 客户端
+	walletSrv.InitMHCClient()
+	walletSrv.InitUSDTClient()
+	//开始监听消息
+	handler.InitExchangeHandler()
+	handler.InitTransferHandler()
 
 	gin.DisableConsoleColor()
 	//gin.SetMode(gin.ReleaseMode)

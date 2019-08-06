@@ -16,7 +16,7 @@ import (
 
 var exchangeService assetSrv.ExchangeService
 
-func init() {
+func InitExchangeHandler() {
 	go utils.ReadMessage("MHC2USDT", mhc2usdtHandler)
 	go utils.ReadMessage("USDT2MHC", usdt2mhcHandler)
 

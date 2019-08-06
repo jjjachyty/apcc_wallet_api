@@ -15,7 +15,7 @@ type cacheRedis struct {
 var redisCache cacheRedis
 var flag int
 
-func init() {
+func InitRedis() {
 	var cacheCfg = GetCacheCfg()
 	if 0 < len(cacheCfg.Cluster.Addrs) { //集群
 		flag = 2

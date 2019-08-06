@@ -107,7 +107,7 @@ func (AssetService) SendInner(log assetMod.TransferLog) error {
 		var result sql.Result
 		var rows int64
 		if err = session.Begin(); err == nil {
-			if result, err = session.Exec("UPDATE asset a set a.blance = a.blance-? where a.uuid = ? and a.address=? and a.symbol=? and a.blance>? ", log.Amount-log.Free, log.FromUser, log.FromAddress, log.Coin, log.Amount-log.Free); err == nil {
+			if result, err = session.Exec("UPDATE asset a set a.blance = a.blance-? where a.uuid = ? and a.address=? and a.symbol=? and a.blance>=? ", log.Amount-log.Free, log.FromUser, log.FromAddress, log.Coin, log.Amount-log.Free); err == nil {
 				if rows, err = result.RowsAffected(); err == nil {
 					if rows == 1 {
 						if _, err = session.Exec("UPDATE asset a set a.blance = a.blance+? where a.address = ? and a.symbol=? ", log.Amount-log.Free, log.ToAddress, log.Coin); err == nil {
@@ -138,7 +138,7 @@ func (AssetService) SendOuter(log assetMod.TransferLog) error {
 		var result sql.Result
 		var rows int64
 		if err = session.Begin(); err == nil {
-			if result, err = session.Exec("UPDATE asset a set a.blance = a.blance-? where a.uuid = ? and a.address=? and a.symbol=? and a.blance>? ", log.Amount, log.FromUser, log.FromAddress, log.Coin, log.Amount); err == nil {
+			if result, err = session.Exec("UPDATE asset a set a.blance = a.blance-? where a.uuid = ? and a.address=? and a.symbol=? and a.blance>=? ", log.Amount, log.FromUser, log.FromAddress, log.Coin, log.Amount); err == nil {
 				if rows, err = result.RowsAffected(); err == nil {
 					if rows == 1 {
 						_, err = session.Insert(log)
@@ -159,6 +159,6 @@ func (AssetService) SendOuter(log assetMod.TransferLog) error {
 	})
 
 }
-func (AssetService) UpdateLogs(log assetMod.TransferLog) error {
+func (AssetService) UpdateTransferLog(log assetMod.TransferLog) error {
 	return models.UpdateBean(log, assetMod.Asset{UUID: log.UUID})
 }

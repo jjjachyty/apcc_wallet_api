@@ -47,3 +47,9 @@ func (UserService) UpdateIDCard(card *userMod.IdCard) error {
 	return models.UpdateBean(card, userMod.IdCard{UserID: card.UserID})
 
 }
+
+func (UserService) GetMaxCountID() int {
+	var maxCountID int
+	models.SQLBean(&maxCountID, "SELECT MAX(account_id) FROM user ")
+	return maxCountID
+}

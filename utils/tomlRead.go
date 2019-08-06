@@ -100,7 +100,7 @@ func init() {
 
 func InitAll() {
 	LoadToml()
-
+	InitRedis()
 	InitDB()
 	InitNsq()
 

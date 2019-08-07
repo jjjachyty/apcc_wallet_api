@@ -3,6 +3,7 @@ package transferCtr
 import (
 	"apcc_wallet_api/middlewares/jwt"
 	"apcc_wallet_api/models/assetMod"
+	"apcc_wallet_api/models/dimMod"
 	"apcc_wallet_api/models/userMod"
 	"apcc_wallet_api/services/assetSrv"
 	"apcc_wallet_api/services/dimSrv"
@@ -50,39 +51,41 @@ func (USDTTransferController) Transfer(c *gin.Context) {
 
 				transferLog.ToAddress, transferLog.FromAddress = toAddress, fromAddress
 				transferLog.Coin = "USDT"
-				transferLog.PriceCny = dimCoinService.GetCoin(transferLog.Coin).PriceCny
-				if free, ok := dimCoinService.GetFree(transferLog.Coin); ok {
-					transferLog.Free = free
+				var coin dimMod.DimCoin
+				if coin, err = dimCoinService.GetCoin(transferLog.Coin); err == nil {
+					if free, ok := dimCoinService.GetFree(transferLog.Coin); ok {
+						transferLog.Free = free
+						transferLog.PriceCny = coin.PriceCny
+						var amount float64
+						if amount, err = strconv.ParseFloat(amountStr, 0); err == nil {
+							transferLog.Amount = amount + free
 
-					var amount float64
-					if amount, err = strconv.ParseFloat(amountStr, 0); err == nil {
-						transferLog.Amount = amount + free
-
-						//检查地址是否是内部地址
-						var asset = new(assetMod.Asset)
-						asset.Address = toAddress
-						if err = assetService.GetBean(asset); err == nil {
-							if asset.UUID != "" { //内部转账
-								transferLog.PayType = assetSrv.PAY_TYPE_TRANSFER_INNER
-								transferLog.Free = 0 //内部转账
-								transferLog.State = utils.STATE_ENABLE
-								err = assetService.SendInner(transferLog)
-							} else { //外部转账
-								transferLog.PayType = assetSrv.PAY_TYPE_TRANSFER_OUTER
-								var assetLogJSONByts []byte
-								if assetLogJSONByts, err = json.Marshal(transferLog); err == nil {
-									if err = assetService.SendOuter(transferLog); err == nil {
-										utils.SysLog.Debugln("开始发送USDT2USDT消息")
-										utils.NsqPublish("USDT2USDT", assetLogJSONByts)
+							//检查地址是否是内部地址
+							var asset = new(assetMod.Asset)
+							asset.Address = toAddress
+							if err = assetService.GetBean(asset); err == nil {
+								if asset.UUID != "" { //内部转账
+									transferLog.PayType = assetSrv.PAY_TYPE_TRANSFER_INNER
+									transferLog.Free = 0 //内部转账
+									transferLog.State = utils.STATE_ENABLE
+									err = assetService.SendInner(transferLog)
+								} else { //外部转账
+									transferLog.PayType = assetSrv.PAY_TYPE_TRANSFER_OUTER
+									var assetLogJSONByts []byte
+									if assetLogJSONByts, err = json.Marshal(transferLog); err == nil {
+										if err = assetService.SendOuter(transferLog); err == nil {
+											utils.SysLog.Debugln("开始发送USDT2USDT消息")
+											utils.NsqPublish("USDT2USDT", assetLogJSONByts)
+										}
 									}
 								}
 							}
+						} else {
+							err = errors.New("金额格式错误")
 						}
 					} else {
-						err = errors.New("金额格式错误")
+						err = fmt.Errorf("获取%s手续费失败", transferLog.Coin)
 					}
-				} else {
-					err = fmt.Errorf("获取%s手续费失败", transferLog.Coin)
 				}
 			} else {
 				err = errors.New("支付密码不正确")

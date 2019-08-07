@@ -8,6 +8,7 @@ import (
 	"apcc_wallet_api/utils"
 	"database/sql"
 	"errors"
+	"fmt"
 
 	"github.com/go-xorm/xorm"
 )
@@ -23,6 +24,7 @@ const (
 	PAY_TYPE_TRANSFER_INNER
 	PAY_TYPE_TRANSFER_OUTER
 	PAY_TYPE_TRANSFER_UNFREEZE
+	PAY_TYPE_TRANSFER_ADD_IN
 )
 
 var dimCoinService dimSrv.DimCoinService
@@ -161,4 +163,31 @@ func (AssetService) SendOuter(log assetMod.TransferLog) error {
 }
 func (AssetService) UpdateTransferLog(log assetMod.TransferLog) error {
 	return models.UpdateBean(log, assetMod.Asset{UUID: log.UUID})
+}
+
+//AddCoin Coin转入平台
+func (AssetService) AddCoin(log assetMod.TransferLog) error {
+	return utils.Session(func(session *xorm.Session) (err error) {
+		var result sql.Result
+		var rows int64
+		if err = session.Begin(); err == nil {
+			if result, err = session.Exec("UPDATE asset a set a.blance = a.blance+? where  a.address = ? and  a.symbol=? ", log.Amount, log.ToAddress, log.Coin); err == nil {
+				if rows, err = result.RowsAffected(); err == nil {
+					if rows == 1 {
+						_, err = session.Update(assetMod.TransferLog{State: utils.STATE_ENABLE}, assetMod.TransferLog{UUID: log.UUID})
+					} else {
+						err = fmt.Errorf("入账失败,请检查账户%s 币种 %s 是否正常", log.ToAddress, log.Coin)
+					}
+				}
+			}
+			if err == nil {
+				err = session.Commit()
+			} else {
+				session.Rollback()
+			}
+		}
+		return err
+
+	})
+
 }

@@ -31,7 +31,7 @@ func mhc2usdtHandler(data []byte) (err error) {
 		spew.Dump(log)
 		log.State = utils.STATE_ENABLE
 		log.SendAt = time.Now()
-		if err = exchangeService.MHC2Coin(*log); err == nil {
+		if err = exchangeService.AddCoin(*log); err == nil {
 			logData, _ := json.Marshal(log)
 			utils.AppLog.Debugf("HMC2USDT||%s", logData)
 			utils.NsqPublish("UpdateExchange", logData)

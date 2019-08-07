@@ -28,7 +28,7 @@ func (ExchangeService) Update(exchnage *assetMod.ExchangeLog) error {
 }
 
 //Coin2MHC 货币兑换MHC
-func (ExchangeService) Coin2MHC(log assetMod.ExchangeLog) error {
+func (ExchangeService) SubCoin(log assetMod.ExchangeLog) error {
 
 	return utils.Session(func(session *xorm.Session) (err error) {
 		var result sql.Result
@@ -56,7 +56,7 @@ func (ExchangeService) Coin2MHC(log assetMod.ExchangeLog) error {
 }
 
 //MHC2Coin MHC兑换货币
-func (ExchangeService) MHC2Coin(log assetMod.ExchangeLog) error {
+func (ExchangeService) AddCoin(log assetMod.ExchangeLog) error {
 
 	return utils.Session(func(session *xorm.Session) (err error) {
 		var result sql.Result

@@ -96,6 +96,44 @@ func HMSet(key string, maps map[string]interface{}) error {
 	return statusCmd.Err()
 }
 
+//HMSet 设置Hash Table缓存 key 键 maps 字段-值
+func HSet(key string, field string, value interface{}) error {
+	var boolCmd *redis.BoolCmd
+	var err error
+	if 0 < flag {
+		if 2 == flag { //集群
+			boolCmd = redisCache.clusterClient.HSet(key, field, value)
+		} else {
+			boolCmd = redisCache.client.HSet(key, field, value)
+		}
+
+	} else {
+		err = errors.New("redis 缓存配置未开启,请先开启Redis 缓存配置")
+		SysLog.Error("Hash SET 失败", err)
+		return err
+	}
+	return boolCmd.Err()
+}
+
+//HMSet 设置Hash Table缓存 key 键 maps 字段-值
+func HGet(key string, field string, value interface{}) (string, error) {
+	var stringCmd *redis.StringCmd
+	var err error
+	if 0 < flag {
+		if 2 == flag { //集群
+			stringCmd = redisCache.clusterClient.HGet(key, field)
+		} else {
+			stringCmd = redisCache.client.HGet(key, field)
+		}
+
+	} else {
+		err = errors.New("redis 缓存配置未开启,请先开启Redis 缓存配置")
+		SysLog.Error("Hash SET 失败", err)
+		return "", err
+	}
+	return stringCmd.Result()
+}
+
 //SAdd sadd(key, member) 设置Set集合类型 key 键 sets slice
 func SAdd(key string, sets ...interface{}) error {
 	var intCmd *redis.IntCmd
@@ -124,6 +162,64 @@ func SMembers(key string) ([]string, error) {
 		} else {
 
 			ssCmd = redisCache.client.SMembers(key)
+
+		}
+
+	} else {
+		err := errors.New("redis 缓存配置未开启,请先开启Redis 缓存配置")
+		SysLog.Error("SMembers 获取Set集合 失败", err)
+		return nil, err
+	}
+	return ssCmd.Result()
+}
+
+//LPush  列表
+func LPush(key string, values ...interface{}) (int64, error) {
+	var intCmd *redis.IntCmd
+	if 0 < flag {
+		if 2 == flag { //集群
+			intCmd = redisCache.clusterClient.LPush(key, values)
+		} else {
+
+			intCmd = redisCache.client.LPush(key, values)
+
+		}
+
+	} else {
+		err := errors.New("redis 缓存配置未开启,请先开启Redis 缓存配置")
+		SysLog.Error("SMembers 获取Set集合 失败", err)
+		return 0, err
+	}
+	return intCmd.Result()
+}
+
+//LPush  列表
+func LLen(key string) (int64, error) {
+	var intCmd *redis.IntCmd
+	if 0 < flag {
+		if 2 == flag { //集群
+			intCmd = redisCache.clusterClient.LLen(key)
+		} else {
+			intCmd = redisCache.client.LLen(key)
+		}
+
+	} else {
+		err := errors.New("redis 缓存配置未开启,请先开启Redis 缓存配置")
+		SysLog.Error("SMembers 获取Set集合 失败", err)
+		return 0, err
+	}
+	return intCmd.Result()
+}
+
+//LPush  列表
+func LRange(key string, start int64, stop int64) ([]string, error) {
+	var ssCmd *redis.StringSliceCmd
+	if 0 < flag {
+		if 2 == flag { //集群
+			ssCmd = redisCache.clusterClient.LRange(key, start, stop)
+		} else {
+
+			ssCmd = redisCache.client.LRange(key, start, stop)
 
 		}
 

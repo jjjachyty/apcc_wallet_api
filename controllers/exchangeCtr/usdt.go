@@ -3,6 +3,7 @@ package exchangeCtr
 import (
 	"apcc_wallet_api/middlewares/jwt"
 	"apcc_wallet_api/models/assetMod"
+	"apcc_wallet_api/models/dimMod"
 	"apcc_wallet_api/models/userMod"
 	"apcc_wallet_api/services/assetSrv"
 	"apcc_wallet_api/services/dimSrv"
@@ -37,31 +38,36 @@ func (USDTExchangeController) MHC(c *gin.Context) {
 		claims := jwt.GetClaims(c)
 		var ok bool
 		if ok, err = userService.CheckPayPasswd(&userMod.User{UUID: claims.UUID, PayPasswd: utils.GetMD5(passwordStr)}); err == nil && ok {
-			fromPriceCny := dimCoinService.GetCoin(log.FromCoin).PriceCny
-			toPriceCny := dimCoinService.GetCoin(log.ToCoin).PriceCny
-			exchangeRate := fromPriceCny / toPriceCny
-			if bigAmount, ok := big.NewFloat(0).SetString(amountStr); ok {
-				if exchangeFree, ok := dimCoinService.GetExchangeFree("USDT"); ok {
-					amount, _ := bigAmount.Float64()
-					mhcAmount := (amount * exchangeRate) - exchangeFree
-					log.FromAmount = amount
-					log.User = claims.UUID
-					log.FromAddress = fromAddress
-					log.ToAddress = toAddress
-					log.ToAmount = mhcAmount
-					log.Free = exchangeFree
-					log.FromPriceCny = fromPriceCny
-					log.ToPriceCny = toPriceCny
-					log.CreateAt = time.Now()
-					var pubData []byte
-					if pubData, err = json.Marshal(log); err == nil {
-						if err = exchangeService.Coin2MHC(log); err == nil {
-							//发布兑换消息
-							utils.NsqPublish("USDT2MHC", pubData)
+			var fromCoin, toCoin dimMod.DimCoin
+			if fromCoin, err = dimCoinService.GetCoin(log.FromCoin); err == nil {
+				if toCoin, err = dimCoinService.GetCoin(log.ToCoin); err == nil {
+
+					exchangeRate := fromCoin.PriceCny / toCoin.PriceCny
+
+					if bigAmount, ok := big.NewFloat(0).SetString(amountStr); ok {
+						if exchangeFree, ok := dimCoinService.GetExchangeFree("USDT"); ok {
+							amount, _ := bigAmount.Float64()
+							mhcAmount := (amount * exchangeRate) - exchangeFree
+							log.FromAmount = amount
+							log.User = claims.UUID
+							log.FromAddress = fromAddress
+							log.ToAddress = toAddress
+							log.ToAmount = mhcAmount
+							log.Free = exchangeFree
+							log.FromPriceCny = fromCoin.PriceCny
+							log.ToPriceCny = toCoin.PriceCny
+							log.CreateAt = time.Now()
+							var pubData []byte
+							if pubData, err = json.Marshal(log); err == nil {
+								if err = exchangeService.SubCoin(log); err == nil {
+									//发布兑换消息
+									utils.NsqPublish("USDT2MHC", pubData)
+								}
+
+							}
+
 						}
-
 					}
-
 				}
 			}
 		} else {

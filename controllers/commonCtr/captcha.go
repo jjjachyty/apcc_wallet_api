@@ -38,20 +38,21 @@ func (CaptchaController) getCaption(c *gin.Context) {
 }
 
 func (CaptchaController) verificationCaption(c *gin.Context) {
-	var err = errors.New("校验验证码错误")
-	phone, hasPhone := c.GetQuery("phone")
-	value, hasDevice := c.GetQuery("value")
+	var err error
+	phone := c.PostForm("phone")
+	value := c.PostForm("value")
 	// ip := c.Request.RemoteAddr
 
-	if hasPhone && hasDevice {
-		verifyResult := base64Captcha.VerifyCaptcha(phone, value)
+	if phone != "" && value != "" {
+		verifyResult := base64Captcha.VerifyCaptchaAndIsClear(phone, value, true)
 		if verifyResult {
 			err = smsService.SendSMS(phone)
 
+		} else {
+			err = errors.New("校验验证码错误")
 		}
-		utils.Response(c, err, verifyResult)
-
 	}
+	utils.Response(c, err, nil)
 
 }
 

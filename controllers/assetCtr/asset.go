@@ -133,14 +133,20 @@ func (AssetController) List(c *gin.Context) {
 //AssetsLogs 获取我的转账记录
 func (AssetController) Orders(c *gin.Context) {
 	var err error
-	var transferLog = new(assetMod.TransferLog)
 
 	var page = utils.GetPageData(c)
-	if err = c.ShouldBindQuery(transferLog); err == nil {
-		transferLog.FromUser = jwt.GetClaims(c).UUID
-		err = assetService.GetLogs(page, transferLog)
+	address, hasAddress := c.GetQuery("address")
+	coin, hasCoin := c.GetQuery("coin")
+
+	if hasAddress && hasCoin {
+		var result = make([]assetMod.TransferLog, 0)
+		page.Rows = &result
+
+		err = assetService.GetLogs(page, assetMod.TransferLog{Coin: coin, FromAddress: address, ToAddress: address, FromUser: jwt.GetClaims(c).UUID})
+
 	}
 	utils.Response(c, err, page)
+
 }
 
 func (AssetController) TransferFree(c *gin.Context) {

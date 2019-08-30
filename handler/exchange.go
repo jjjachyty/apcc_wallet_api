@@ -6,10 +6,13 @@ import (
 	"apcc_wallet_api/services/walletSrv"
 	"apcc_wallet_api/utils"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math"
 	"math/big"
 	"time"
+
+	"github.com/ethereum/go-ethereum/core/types"
 
 	"github.com/davecgh/go-spew/spew"
 )
@@ -27,15 +30,23 @@ func InitExchangeHandler() {
 func mhc2usdtHandler(data []byte) (err error) {
 	fmt.Println("收到MHC2USDT消息")
 	var log = new(assetMod.ExchangeLog)
+	var recpt *types.Receipt
 	if err = json.Unmarshal(data, &log); err == nil {
-		spew.Dump(log)
-		log.State = utils.STATE_ENABLE
-		log.SendAt = time.Now()
-		if err = exchangeService.AddCoin(*log); err == nil {
-			logData, _ := json.Marshal(log)
-			utils.AppLog.Debugf("HMC2USDT||%s", logData)
-			utils.NsqPublish("UpdateExchange", logData)
+
+		if recpt, err = walletSrv.GetMHCTransactionReceipt(log.SendTxs); err == nil {
+			if recpt.BlockNumber.Int64()+3 < walletSrv.GetMHCLastBlockNum() { //超过3个区块接受则转账
+				log.State = utils.STATE_ENABLE
+				log.SendAt = time.Now()
+				if err = exchangeService.AddCoin(*log); err == nil {
+					logData, _ := json.Marshal(log)
+					utils.AppLog.Debugf("HMC2USDT||%s", logData)
+					utils.NsqPublish("UpdateExchange", logData)
+				}
+			} else {
+				return errors.New("等待更多的区块接受")
+			}
 		}
+
 	}
 	return err
 }
@@ -47,9 +58,9 @@ func usdt2mhcHandler(data []byte) (err error) {
 		spew.Dump(log)
 		mhcAmountStr := new(big.Float).Mul(big.NewFloat(log.ToAmount), big.NewFloat(math.Pow10(18))).Text('f', 0)
 		if mhcAmount, ok := big.NewInt(0).SetString(mhcAmountStr, 0); ok {
+
 			var address, txs string
 			if address, txs, err = walletSrv.SendMHC(mhcAmount, log.ToAddress); err == nil {
-				fmt.Println("usdt2mhcHandler", address, txs, err)
 				log.SendAddress = address
 				log.SendTxs = txs
 				log.State = utils.STATE_ENABLE

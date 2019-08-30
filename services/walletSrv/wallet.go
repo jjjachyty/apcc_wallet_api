@@ -67,7 +67,6 @@ func GetEthAddress(acountID uint32) (string, error) {
 		if child, err := key.NewChildKey(acountID); err == nil {
 
 			pubKey := utils.ExpandPublicKey(child.Key)
-			fmt.Printf("%x", child.ChildNumber)
 			return crypto.PubkeyToAddress(*pubKey).Hex(), err
 		}
 	}
@@ -75,13 +74,13 @@ func GetEthAddress(acountID uint32) (string, error) {
 }
 
 func GetAddress(userid string, acountID uint32) ([]assetMod.Asset, error) {
-	var assets = make([]assetMod.Asset, 3)
+	var assets = make([]assetMod.Asset, 1)
 	var ethAddr string
 	var err error
 
 	if ethAddr, err = GetEthAddress(acountID); err == nil {
-		assets[0] = assetMod.Asset{UUID: userid, Symbol: assetSrv.HMC_COIN_SYMBOL, BaseOn: BASE_ON_ETH, Address: ethAddr}
-		assets[1] = assetMod.Asset{UUID: userid, Symbol: assetSrv.USDT_COIN_SYMBOL, BaseOn: BASE_ON_ETH, Address: ethAddr}
+		assets[0] = assetMod.Asset{UUID: userid, Symbol: assetSrv.USDT_COIN_SYMBOL, BaseOn: BASE_ON_ETH, Address: ethAddr}
+		// assets[1] = assetMod.Asset{UUID: userid, Symbol: assetSrv.USDT_COIN_SYMBOL, BaseOn: BASE_ON_ETH, Address: ethAddr}
 	}
 	// if btcAddr, err = GetBtcAddress(acountID); err == nil {
 

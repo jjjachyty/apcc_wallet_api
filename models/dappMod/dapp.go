@@ -13,6 +13,7 @@ type Dapp struct {
 	Score         float64
 	Logo          string
 	Banner        string
+	FullScreen    int
 	Snapshot      string
 	Video         string
 	Owner         string
@@ -23,7 +24,8 @@ type Dapp struct {
 	LowerAt       time.Time
 	Auditor       string
 	AuditOpinions string
-	SmartCode     string
+	AbiCode       string
+	Address       string
 	HomePage      string
 }
 

@@ -36,7 +36,9 @@ func (DappController) Main(c *gin.Context) {
 
 	user, ok := c.GetQuery("user")
 	if ok && user != "" { //已登录的用户返回最近使用的dapp
-		dapp, err = dappUseLogService.RecentUsed(user)
+		if dapp, err = dappUseLogService.RecentUsed(user); len(dapp) == 0 {
+			dapp, err = dappService.AdvancedFind("score", 6, "state=?", utils.STATE_ENABLE)
+		}
 	} else { //未登录的用户返回推荐Dapp
 		dapp, err = dappService.AdvancedFind("score", 6, "state=?", utils.STATE_ENABLE)
 	}

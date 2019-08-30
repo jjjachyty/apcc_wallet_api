@@ -116,7 +116,7 @@ func HSet(key string, field string, value interface{}) error {
 }
 
 //HMSet 设置Hash Table缓存 key 键 maps 字段-值
-func HGet(key string, field string, value interface{}) (string, error) {
+func HGet(key string, field string) (string, error) {
 	var stringCmd *redis.StringCmd
 	var err error
 	if 0 < flag {

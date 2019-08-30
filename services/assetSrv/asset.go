@@ -4,7 +4,6 @@ import (
 	"apcc_wallet_api/models"
 	"apcc_wallet_api/models/assetMod"
 	"apcc_wallet_api/services/dimSrv"
-	"apcc_wallet_api/services/userSrv"
 	"apcc_wallet_api/utils"
 	"database/sql"
 	"errors"
@@ -57,8 +56,6 @@ var (
 
 type AssetService struct{}
 
-var userService userSrv.UserService
-
 func TransferCoin(symbol string, fromAddress string, amount float64, toAddress string) {
 	switch symbol {
 	case HMC_COIN_SYMBOL:
@@ -85,8 +82,8 @@ func (AssetService) Get(assets *assetMod.Asset) error {
 func (AssetService) GetBean(assets *assetMod.Asset) error {
 	return models.GetBean(assets)
 }
-func (AssetService) GetLogs(page *utils.PageData, condBean interface{}) error {
-	return models.GetBeansPage(page, condBean)
+func (AssetService) GetLogs(page *utils.PageData, log assetMod.TransferLog) error {
+	return models.GetSQLPage(page, "coin = ? and (from_address = ? or to_address = ?)", log.Coin, log.FromAddress, log.ToAddress)
 }
 
 func (AssetService) Find(assets *[]assetMod.Asset, condBean assetMod.Asset) error {

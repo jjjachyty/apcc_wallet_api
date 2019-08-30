@@ -46,6 +46,7 @@ func (DimCoinService) GetExchangeRate(mainSymbol, exchangeSymbol string) (float6
 	var exchangeCoin dimMod.DimCoin
 	var mainCoinBytes, exchangeCoinBytes string
 	var err error
+	fmt.Println(mainSymbol, exchangeSymbol)
 	if mainCoinBytes, err = utils.Get("dimcoin:" + mainSymbol); err == nil {
 		if exchangeCoinBytes, err = utils.Get("dimcoin:" + exchangeSymbol); err == nil {
 			if err = json.Unmarshal([]byte(mainCoinBytes), &mainCoin); err == nil {
@@ -59,7 +60,7 @@ func (DimCoinService) GetExchangeRate(mainSymbol, exchangeSymbol string) (float6
 
 		}
 	}
-	return 0, fmt.Errorf("未找到[%s->%s]的汇率", mainCoin, exchangeCoin)
+	return 0, fmt.Errorf("未找到[%s->%s]的汇率", mainSymbol, exchangeSymbol)
 }
 
 func (dimCoin DimCoinService) GetExchangeFree(symbol string) (float64, bool) {

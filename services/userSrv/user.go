@@ -2,16 +2,38 @@ package userSrv
 
 import (
 	"apcc_wallet_api/models"
+	"apcc_wallet_api/models/assetMod"
 	"apcc_wallet_api/models/userMod"
+	"apcc_wallet_api/services/walletSrv"
 	"apcc_wallet_api/utils"
+
+	"github.com/go-xorm/xorm"
 )
 
 type UserService struct{}
 
-func (UserService) Register(user *userMod.User) error {
-	user.Password = utils.GetMD5(user.Password)
-	user.NickName = user.Phone[7:]
-	return models.Create(user)
+func (UserService) Register(user *userMod.User) (err error) {
+	var assets []assetMod.Asset
+
+	return utils.Session(func(session *xorm.Session) error {
+		user.UUID = utils.GetUUID()
+		user.State = utils.STATE_ENABLE
+		user.Password = utils.GetMD5(user.Password)
+		user.NickName = user.Phone[7:]
+		if _, err = session.Insert(user); err == nil {
+
+			if assets, err = walletSrv.GetAddress(user.UUID, uint32(user.AccountID)); err == nil {
+				_, err = session.Insert(assets)
+			}
+
+		}
+		if err != nil {
+			session.Rollback()
+		} else {
+			session.Commit()
+		}
+		return err
+	})
 }
 
 func (UserService) Login(user *userMod.User) error {
@@ -27,8 +49,9 @@ func (UserService) Get(user *userMod.User) error {
 }
 
 func (UserService) Update(user *userMod.User) error {
-
-	return models.UpdateBean(user, userMod.User{UUID: user.UUID})
+	uuid := user.UUID
+	user.UUID = ""
+	return models.UpdateBean(user, userMod.User{UUID: uuid})
 
 }
 
@@ -48,8 +71,8 @@ func (UserService) UpdateIDCard(card *userMod.IdCard) error {
 
 }
 
-func (UserService) GetMaxCountID() int {
-	var maxCountID int
+func (UserService) GetMaxCountID() int64 {
+	var maxCountID int64
 	models.SQLBean(&maxCountID, "SELECT MAX(account_id) FROM user ")
 	return maxCountID
 }

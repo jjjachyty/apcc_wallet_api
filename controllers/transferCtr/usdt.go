@@ -58,18 +58,20 @@ func (USDTTransferController) Transfer(c *gin.Context) {
 						transferLog.PriceCny = coin.PriceCny
 						var amount float64
 						if amount, err = strconv.ParseFloat(amountStr, 0); err == nil {
-							transferLog.Amount = amount + free
 
 							//检查地址是否是内部地址
 							var asset = new(assetMod.Asset)
 							asset.Address = toAddress
 							if err = assetService.GetBean(asset); err == nil {
+								transferLog.Amount = amount
 								if asset.UUID != "" { //内部转账
 									transferLog.PayType = assetSrv.PAY_TYPE_TRANSFER_INNER
 									transferLog.Free = 0 //内部转账
+
 									transferLog.State = utils.STATE_ENABLE
 									err = assetService.SendInner(transferLog)
 								} else { //外部转账
+									transferLog.Amount = amount + free
 									transferLog.PayType = assetSrv.PAY_TYPE_TRANSFER_OUTER
 									var assetLogJSONByts []byte
 									if assetLogJSONByts, err = json.Marshal(transferLog); err == nil {

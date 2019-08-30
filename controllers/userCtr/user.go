@@ -2,20 +2,16 @@ package userCtr
 
 import (
 	"apcc_wallet_api/middlewares/jwt"
-	"apcc_wallet_api/models/assetMod"
 	"apcc_wallet_api/models/userMod"
 	"apcc_wallet_api/services/assetSrv"
 	"apcc_wallet_api/services/commonSrv"
 	"apcc_wallet_api/services/userSrv"
-	"apcc_wallet_api/services/walletSrv"
 	"apcc_wallet_api/utils"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"mime/multipart"
 	"regexp"
-
-	"github.com/go-xorm/xorm"
 
 	"github.com/gin-gonic/gin"
 )
@@ -30,21 +26,28 @@ type UserController struct{}
 func (UserController) Register(c *gin.Context) {
 	var err error
 	var user = new(userMod.User)
-	var assets []assetMod.Asset
 	if err = c.BindJSON(user); err == nil {
 
 		if VerifyMobileFormat(user.Phone) && VerifyPasswdFormat(user.Password) {
+			err = userService.Register(user)
+		}
 
-			err = utils.Session(func(*xorm.Session) error {
-				user.UUID = utils.GetUUID()
-				user.State = utils.STATE_ENABLE
-				if err = userService.Register(user); err == nil {
-					if assets, err = walletSrv.GetAddress(user.UUID, uint32(user.AccountID)); err == nil {
-						err = assetsService.Create(assets)
-					}
-				}
-				return err
-			})
+	}
+	utils.Response(c, err, nil)
+
+}
+
+//CheckPhone 检查手机号是否已注册
+func (UserController) CheckPhone(c *gin.Context) {
+	var err error
+	phone, hasPhone := c.GetQuery("phone")
+	if hasPhone {
+		user := new(userMod.User)
+		user.Phone = phone
+		if err = userService.Get(user); err == nil {
+			if user.UUID != "" {
+				err = errors.New("用户已存在,请登录")
+			}
 		}
 
 	}
@@ -90,6 +93,7 @@ func (UserController) LoginWithSMS(c *gin.Context) {
 	fmt.Println(phone, sms)
 	if VerifyMobileFormat(phone) {
 		if err = smsService.VerificationSMS(phone, sms); err == nil {
+			user.Phone = phone
 			if err = userService.Get(user); err == nil {
 				if user.UUID != "" {
 					if user.PayPasswd != "" {
@@ -141,7 +145,7 @@ func (UserController) LoginPassword(c *gin.Context) {
 
 	if password != "" {
 		var user = new(userMod.User)
-		user.Phone = claims.Phone
+		user.UUID = claims.UUID
 		user.Password = utils.GetMD5(password)
 		//新增
 		err = userService.Update(user)

@@ -30,7 +30,7 @@ func GetBean(beanP interface{}) error {
 	return err
 }
 
-//GetBean 根据实体非空字段查询单跳数据
+//GetBean 根据实体非空字段查询集合数据
 func GetBeans(beans interface{}, condBean interface{}) error {
 	session, flag := utils.GetSession()
 	if flag {

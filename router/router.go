@@ -24,15 +24,22 @@ func WebRouter(router *gin.Engine) {
 			com.Any("/sms", commonCtr.SMSController{}.Controller)
 			com.Any("/captcha", commonCtr.CaptchaController{}.Controller)
 			com.Any("/version", commonCtr.GetMaxVersion)
+			com.GET("/news", commonCtr.NewsController{}.NewsList)
+			com.POST("/news", commonCtr.NewsController{}.AddNews)
+			com.DELETE("/news", commonCtr.NewsController{}.RemoveNews)
+			com.GET("/newsdetail", commonCtr.NewsController{}.NewsDetail)
 		}
 
 		dim := v1.Group("/dim") //纬度
 		{
 			dim.GET("/coins", dimCtr.DimCoinController{}.All)
+			dim.POST("/config", dimCtr.DimConfigController{}.AddOrUpdate)
 		}
 		auth := v1.Group("/auth") //权限
 		{
 			auth.POST("/register", userCtr.UserController{}.Register)
+			auth.GET("/checkphone", userCtr.UserController{}.CheckPhone)
+
 			auth.POST("/loginwithpw", userCtr.UserController{}.LoginWithPW)
 			auth.POST("/loginwithsms", userCtr.UserController{}.LoginWithSMS)
 			auth.POST("/refreshtoken", jwt.RefreshToken)

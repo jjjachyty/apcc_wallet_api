@@ -28,15 +28,15 @@ func IDCardRecognition(c *gin.Context) {
 				if back, err := commonSrv.IDCadrPostRecognition(file2); err == nil && back.ErrorMessage == "" {
 					card.Cards[0].IssuedBy = back.Cards[0].IssuedBy
 					card.Cards[0].ValidDate = back.Cards[0].ValidDate
-					fmt.Println(back.Cards[0])
-					utils.Response(c, err, card)
+					fmt.Println(card)
+					utils.Response(c, nil, card)
 					return
 				}
-				utils.Response(c, errors.New("身份证反面解析失败"), nil)
+				utils.Response(c, errors.New("身份证反面解析失败,请重试"), nil)
 				return
 
 			}
-			utils.Response(c, errors.New("身份证正面解析失败"), nil)
+			utils.Response(c, errors.New("身份证正面解析失败,请重试"), nil)
 
 		} else {
 			utils.Response(c, errors.New("图片打开失败"), nil)

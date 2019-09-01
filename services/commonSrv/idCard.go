@@ -41,6 +41,7 @@ func IDCadrPostRecognition(imageFile multipart.File) (*response, error) {
 	if err != nil {
 		return nil, err
 	}
+	fmt.Println(len(bodyBuf.Bytes()))
 
 	contentType := bodyWriter.FormDataContentType()
 	bodyWriter.Close()

@@ -60,9 +60,9 @@ func SQLBeans(beans interface{}, sql string, args ...interface{}) error {
 }
 
 //Update 更新表数据
-func Update(UUID string, beanP interface{}) error {
+func Update(UUID string, beanP interface{}, cols ...string) error {
 	session, flag := utils.GetSession()
-	_, err := session.Id(UUID).Update(beanP)
+	_, err := session.Id(UUID).Cols(cols...).Update(beanP)
 	if flag {
 		session.Close()
 	}

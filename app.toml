@@ -34,6 +34,7 @@ nsqdserver="119.3.108.19"
 nsqdport="4150"
 lookupdserver="119.3.108.19"
 lookupdport="4161"
+chainid="janly"
 #后端端口号
 [port]
 port=":9090"

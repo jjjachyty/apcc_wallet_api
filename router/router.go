@@ -25,7 +25,6 @@ func WebRouter(router *gin.Engine) {
 			com.Any("/captcha", commonCtr.CaptchaController{}.Controller)
 			com.Any("/version", commonCtr.GetMaxVersion)
 			com.GET("/news", commonCtr.NewsController{}.NewsList)
-			com.POST("/news", commonCtr.NewsController{}.AddNews)
 			com.DELETE("/news", commonCtr.NewsController{}.RemoveNews)
 			com.GET("/newsdetail", commonCtr.NewsController{}.NewsDetail)
 		}
@@ -61,6 +60,12 @@ func WebRouter(router *gin.Engine) {
 			user.POST("/loginpasswd", userCtr.UserController{}.LoginPassword)
 			user.POST("/profile", userCtr.UserController{}.Profile)
 			user.POST("/idcard", userCtr.UserController{}.IDCard)
+
+		}
+
+		news := v1.Group("/news")
+		{
+			news.POST("/addorupdate", commonCtr.NewsController{}.AddOrUpdateNews)
 
 		}
 		//货币兑换

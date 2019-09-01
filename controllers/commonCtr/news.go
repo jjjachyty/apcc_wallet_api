@@ -1,8 +1,10 @@
 package commonCtr
 
 import (
+	"apcc_wallet_api/middlewares/jwt"
 	"apcc_wallet_api/services/commonSrv"
 	"apcc_wallet_api/utils"
+	"fmt"
 
 	"github.com/gin-gonic/gin"
 )
@@ -32,12 +34,22 @@ func (NewsController) NewsDetail(c *gin.Context) {
 	utils.Response(c, err, news)
 }
 
-func (NewsController) AddNews(c *gin.Context) {
+func (NewsController) AddOrUpdateNews(c *gin.Context) {
 	var err error
 	var news = new(commonSrv.News)
-	if err = c.ShouldBind(news); err == nil {
-		news.UUID = utils.GetUUID()
-		err = newsService.AddNews(news)
+	if err = c.BindJSON(news); err == nil {
+		c := jwt.GetClaims(c)
+		fmt.Println("\n\n", news.State)
+		if news.UUID != "" {
+			news.UpdateBy = c.UUID
+			err = newsService.UpdateNews(news)
+		} else {
+			news.UUID = utils.GetUUID()
+			news.CreateBy = c.UUID
+			news.State = utils.STATE_ENABLE
+			err = newsService.AddNews(news)
+
+		}
 	}
 	utils.Response(c, err, news)
 }

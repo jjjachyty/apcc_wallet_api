@@ -54,7 +54,7 @@ func ReadMessage(topicName string, handler func(data []byte) error) {
 	nsqCfg := GetNsq()
 	config.MaxInFlight = 1000
 	config.MaxBackoffDuration = 500 * time.Second
-	chanID := GetIP() + "_" + GetUserName()
+	chanID := nsqCfg.ChainID
 	SysLog.Debugf("开始监听NSQ %s %s", topicName, chanID)
 	q, err := nsq_client.NewConsumer(topicName, chanID, config)
 	if err != nil {

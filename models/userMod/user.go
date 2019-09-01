@@ -1,8 +1,33 @@
 package userMod
 
 import (
+	"fmt"
 	"time"
 )
+
+type Birthday time.Time
+
+var birthdayFormart = "2006-01-02"
+
+func (t Birthday) MarshalJSON() ([]byte, error) {
+	b := make([]byte, 0, len(birthdayFormart)+2)
+	b = append(b, '"')
+	b = time.Time(t).AppendFormat(b, birthdayFormart)
+	b = append(b, '"')
+	return b, nil
+}
+
+func (t Birthday) String() string {
+	return time.Time(t).Format(birthdayFormart)
+}
+
+func (birthday *Birthday) UnmarshalJSON(b []byte) error {
+	fmt.Println("time", b, string(b)[1:11])
+	date, err := time.ParseInLocation(birthdayFormart, string(b)[1:11], time.Local)
+	fmt.Println("date", date)
+	*birthday = Birthday(date)
+	return err
+}
 
 type User struct {
 	UUID         string `xorm:"varchar(26) notnull unique pk 'uuid'"`
@@ -24,13 +49,13 @@ type User struct {
 }
 
 type IdCard struct {
-	UserID       string    `xorm:" notnull unique pk 'user_id'"`
-	Gender       string    `xorm:"'id_gender'"`
-	Name         string    `xorm:"'id_name'"`
-	IDCardNumber string    `json:"id_card_number" xorm:"'id_card_number'"`
-	Birthday     time.Time `xorm:"'id_birthday'"`
-	Race         string    `xorm:"'id_race'"`
-	Address      string    `xorm:"'id_address'"`
+	UserID       string   `xorm:" notnull unique pk 'user_id'"`
+	Gender       string   `xorm:"'gender'"`
+	Name         string   `xorm:"'name'"`
+	IDCardNumber string   `json:"id_card_number" xorm:"'number'"`
+	Birthday     Birthday `xorm:"'birthday'"`
+	Race         string   `xorm:"'race'"`
+	Address      string   `xorm:"'address'"`
 	// Legality": {
 	// 	"Edited": 0.001,
 	// 	"Photocopy": 0.0,
@@ -40,6 +65,6 @@ type IdCard struct {
 	// },
 	// Type      int
 	// Side      string
-	IssuedBy  string `json:"issued_by" xorm:"'id_issued_by'"`
-	ValidDate string `json:"valid_date" xorm:"'id_valid_date'"`
+	IssuedBy  string `json:"issued_by" xorm:"'issued_by'"`
+	ValidDate string `json:"valid_date" xorm:"'valid_date'"`
 }

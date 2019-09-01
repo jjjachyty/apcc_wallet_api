@@ -59,6 +59,7 @@ type nsq struct {
 	NsqdPort      string
 	LookupdServer string
 	LookupdPort   string
+	ChainID       string
 }
 type auth struct {
 	Server string

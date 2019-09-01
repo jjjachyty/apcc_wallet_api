@@ -182,13 +182,14 @@ func (UserController) IDCard(c *gin.Context) {
 	if err = c.BindJSON(card); err == nil {
 		if card.Name != "" && card.IDCardNumber != "" {
 			card.UserID = jwt.GetClaims(c).UUID
-			err = userService.UpdateIDCard(card)
+			if err = userService.AddIDCard(card); err == nil {
+				err = userService.Update(&userMod.User{UUID: card.UserID, IDCardAuth: 1})
+			}
 
 		} else {
 			utils.Response(c, errors.New("参数错误"), nil)
 		}
 	}
-	fmt.Println(err)
 	utils.Response(c, err, nil)
 }
 

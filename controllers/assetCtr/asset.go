@@ -149,6 +149,24 @@ func (AssetController) Orders(c *gin.Context) {
 
 }
 
+//AssetsLogs 获取我的转账记录
+func (AssetController) MHCOrders(c *gin.Context) {
+	var err error
+
+	var page = utils.GetPageData(c)
+	address, hasAddress := c.GetQuery("address")
+
+	if hasAddress {
+		var result = make([]assetMod.MHCTransferLog, 0)
+		page.Rows = &result
+
+		err = assetService.GetMHCTransferLogs(page, assetMod.MHCTransferLog{From: address, To: address})
+
+	}
+	utils.Response(c, err, page)
+
+}
+
 func (AssetController) TransferFree(c *gin.Context) {
 	var err error
 	var free float64

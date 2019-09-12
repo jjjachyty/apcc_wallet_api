@@ -86,6 +86,10 @@ func (AssetService) GetLogs(page *utils.PageData, log assetMod.TransferLog) erro
 	return models.GetSQLPage(page, "coin = ? and (from_address = ? or to_address = ?)", log.Coin, log.FromAddress, log.ToAddress)
 }
 
+func (AssetService) GetMHCTransferLogs(page *utils.PageData, log assetMod.MHCTransferLog) error {
+	return models.GetSQLPage(page, " `from` = ? or `to` = ? ", log.From, log.To)
+}
+
 func (AssetService) Find(assets *[]assetMod.Asset, condBean assetMod.Asset) error {
 	return models.GetBeans(assets, condBean)
 }

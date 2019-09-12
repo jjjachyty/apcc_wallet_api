@@ -43,3 +43,27 @@ type TransferLog struct {
 func (TransferLog) TableName() string {
 	return "transfer_log"
 }
+
+type MHCTransferLog struct {
+	TxHash      string `xorm:"varchar(36)  notnull unique pk"`
+	BlockNumber int64
+	BlockHash   string
+	From        string
+	To          string
+	Gas         float64
+
+	GasPrice float64
+	GasUsed  float64
+	Value    float64
+
+	Free       float64
+	Status     int
+	TokenValue float64
+	TokenTo    string
+	InputData  string
+	CreateAt   time.Time
+}
+
+func (MHCTransferLog) TableName() string {
+	return "transfer_log_mhc"
+}

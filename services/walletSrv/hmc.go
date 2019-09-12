@@ -19,7 +19,7 @@ var hotWalletPrivateKey = "68f80940c98719851873e9e41e28f9a98f15e73df918401c51f9a
 var mhcClient *ethclient.Client
 var chainID *big.Int
 var gasLimit = uint64(21000) // in units
-var mhcAddress = "http://119.3.108.19:8110"
+var mhcAddress = "http://119.3.108.19:8111"
 
 func initMHCVars() {
 	var err error
@@ -33,7 +33,7 @@ func initMHCVars() {
 }
 
 func InitMHCClient() {
-	initMHCVars()
+	// initMHCVars()
 	client, err := ethclient.Dial(mhcAddress)
 	if err != nil {
 		utils.SysLog.Panicf("MHC客户端%s创建失败", mhcAddress)
@@ -46,7 +46,6 @@ func InitMHCClient() {
 	}
 	chainID = id
 	utils.SysLog.Debugln("MHC客户端初始化成功")
-
 }
 
 func SendMHC(amount *big.Int, toAddressHex string) (address string, txs string, err error) {

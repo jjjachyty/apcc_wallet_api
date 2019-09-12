@@ -98,7 +98,7 @@ func GetKey() {
 
 	// 生成助记词
 	// mmic, _ := bip39.NewMnemonic(entropy)
-	seed := bip39.NewSeed("拒 计 精 荷 酸 压 悲 尤 针 过 凡 纪 东 谓 嫩 哭 敢 韦 洞 穆 叛 柳 趋 瑞", "")
+	seed := bip39.NewSeed("我 的 名 字 叫 张 力 我 爱 汪 洪 荳", "")
 
 	masterKey, _ := bip32.NewMasterKey(seed)
 	purposeKey, _ := masterKey.NewChildKey(bip32.FirstHardenedChild + 44)

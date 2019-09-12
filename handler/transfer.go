@@ -175,7 +175,7 @@ func scanAddress() {
 									}
 								}
 							} else {
-								utils.SysLog.Errorf("获取USDT_ETH %s余额出错 ", address)
+								utils.SysLog.Errorf("获取USDT_ETH %s余额出错 %v", address,err)
 							}
 						} else {
 							utils.SysLog.Warnf("地址[%s]获取出错 %v %v", address, err, txs)

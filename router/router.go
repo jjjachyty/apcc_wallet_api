@@ -95,6 +95,8 @@ func WebRouter(router *gin.Engine) {
 
 			// assets.POST("/transfer", assetCtr.AssetController{}.Transfer)
 			assets.GET("/logs", assetCtr.AssetController{}.Orders)
+			assets.GET("/mhclogs", assetCtr.AssetController{}.MHCOrders)
+
 		}
 		// wallet := v1.Group("/wallet") //钱包
 		// {

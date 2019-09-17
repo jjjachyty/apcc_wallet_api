@@ -1,6 +1,7 @@
 package walletSrv
 
 import (
+	"apcc_wallet_api/models"
 	"apcc_wallet_api/utils"
 	"context"
 	"crypto/ecdsa"
@@ -19,11 +20,11 @@ var hotWalletPrivateKey = "68f80940c98719851873e9e41e28f9a98f15e73df918401c51f9a
 var mhcClient *ethclient.Client
 var chainID *big.Int
 var gasLimit = uint64(21000) // in units
-var mhcAddress = "http://119.3.108.19:8111"
+var mhcAddress = "ws://119.3.108.19:8111"
 
 func initMHCVars() {
 	var err error
-	if mhcAddress, err = utils.HGet("mhc", "rpc_address"); err == nil {
+	if mhcAddress, err = utils.HGet("mhc", "ws_address"); err == nil {
 		hotWalletPrivateKey, err = utils.HGet("mhc", "hot_wallet_privatekey")
 	}
 
@@ -33,7 +34,7 @@ func initMHCVars() {
 }
 
 func InitMHCClient() {
-	// initMHCVars()
+	initMHCVars()
 	client, err := ethclient.Dial(mhcAddress)
 	if err != nil {
 		utils.SysLog.Panicf("MHC客户端%s创建失败", mhcAddress)
@@ -147,4 +148,20 @@ func GetMHCGas() *big.Int {
 		return new(big.Int).Mul(gasPrice, big.NewInt(2100))
 	}
 	return new(big.Int).Mul(big.NewInt(100000000000), big.NewInt(2100))
+}
+
+func syncTransferLog() {
+	ctx := context.Background()
+	var syncedBlockNumber int64
+	if err := models.SQLBean(&syncedBlockNumber, "select max(block_number) from transfer_log_mhc"); err == nil {
+		if lastBlockNumber, err := mhcClient.BlockByNumber(ctx, nil); err == nil {
+			if syncedBlockNumber < lastBlockNumber.Number().Int64() { //未同步完,开始同步
+
+			}
+		}
+	}
+
+}
+func subscribeBlock() {
+
 }

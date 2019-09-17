@@ -55,7 +55,7 @@ type MHCTransferLog struct {
 	GasPrice float64
 	GasUsed  float64
 	Value    float64
-
+    Nonce    int64
 	Free       float64
 	Status     int
 	TokenValue float64

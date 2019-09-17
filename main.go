@@ -1,7 +1,6 @@
 package main
 
 import (
-	"apcc_wallet_api/handler"
 	"apcc_wallet_api/middlewares/cors"
 	"apcc_wallet_api/router"
 	"apcc_wallet_api/services/dimSrv"
@@ -16,10 +15,10 @@ func main() {
 	dimSrv.InitDimConfig()
 	//初始化MHC USDT 客户端
 	walletSrv.InitMHCClient()
-	walletSrv.InitETHClient()
+	// walletSrv.InitETHClient()
 	//开始监听消息
-	handler.InitExchangeHandler()
-	handler.InitTransferHandler()
+	// handler.InitExchangeHandler()
+	// handler.InitTransferHandler()
 
 	gin.DisableConsoleColor()
 	//gin.SetMode(gin.ReleaseMode)

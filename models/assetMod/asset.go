@@ -50,10 +50,10 @@ type MHCTransferLog struct {
 	BlockHash   string
 	From        string
 	To          string
-	Gas         uint64
+	Gas         int64
 
 	GasPrice   int64
-	GasUsed    uint64
+	GasUsed    int64
 	Value      float64
 	Nonce      int64
 	Free       float64

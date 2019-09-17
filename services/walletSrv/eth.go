@@ -29,7 +29,7 @@ var rpcAddress string
 
 func initETHVars() {
 	var err error
-	if rpcAddress, err = utils.HGet("eth", "rpc_address"); err == nil {
+	if rpcAddress, err = utils.HGet("eth", "ws_address"); err == nil {
 		if ethHotWalletAddress, err = utils.HGet("eth", "hot_wallet_address"); err == nil {
 			if privateKey, err = utils.HGet("eth", "hot_wallet_privatekey"); err == nil {
 				if ethContractsAddress, err = utils.HGet("eth", "contracts_address_usdt"); err == nil {
@@ -58,7 +58,7 @@ func InitETHClient() {
 				utils.SysLog.Debugf("当前账户剩余%sUSDT", balance.String())
 			}
 		} else {
-			utils.SysLog.Panic("获取AUth 失败")
+			utils.SysLog.Panic("获取AUth 失败", err)
 		}
 
 	} else {

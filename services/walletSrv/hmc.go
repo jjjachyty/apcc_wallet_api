@@ -1,10 +1,15 @@
 package walletSrv
 
 import (
+	"apcc_wallet_api/models/assetMod"
 	"apcc_wallet_api/utils"
 	"context"
 	"crypto/ecdsa"
+	"fmt"
 	"math/big"
+	"time"
+
+	"apcc_wallet_api/models"
 
 	"github.com/ethereum/go-ethereum/core/types"
 
@@ -147,4 +152,48 @@ func GetMHCGas() *big.Int {
 		return new(big.Int).Mul(gasPrice, big.NewInt(2100))
 	}
 	return new(big.Int).Mul(big.NewInt(100000000000), big.NewInt(2100))
+}
+func Logs() {
+	ctx := context.Background()
+	if lastBlock, err := mhcClient.BlockByNumber(ctx, nil); err == nil {
+		var currentBlock int64
+		if err := models.SQLBean(&currentBlock, "select IFNULL(max(block_number),0) from transfer_log_mhc"); err == nil {
+			for index := int64(currentBlock + 1); index < lastBlock.Number().Int64(); index++ {
+				mhcTransferLogs := make([]assetMod.MHCTransferLog, 0)
+
+				if block, err := mhcClient.BlockByNumber(ctx, big.NewInt(254)); err == nil {
+					for _, tx := range block.Transactions() {
+						if msg, err := tx.AsMessage(types.NewEIP155Signer(big.NewInt(3333))); err == nil {
+							floatValue, _ := big.NewFloat(0).SetString(tx.Value().String())
+							value := big.NewFloat(0).Quo(floatValue, big.NewFloat(1000000000000000000))
+							valueFloat, _ := value.Float64()
+							fmt.Println(tx.Nonce(), block.Nonce())
+							// err := models.Create(
+							mhcTransferLogs = append(mhcTransferLogs, assetMod.MHCTransferLog{
+								TxHash:      tx.Hash().Hex(),
+								BlockNumber: block.Number().Int64(),
+								BlockHash:   block.Hash().Hex(),
+								From:        msg.From().Hex(),
+								To:          msg.To().Hex(),
+								Nonce:       int64(tx.Nonce()),
+								Value:       valueFloat,
+								Gas:         tx.Gas(),
+								GasPrice:    tx.GasPrice().Int64(),
+								GasUsed:     block.GasUsed(),
+								Status:      1,
+								CreateAt:    time.Unix(int64(block.Time()), 0),
+								InputData:   common.ToHex(msg.Data()),
+							})
+							// )
+						}
+					}
+					//批量插入交易
+					if err := models.Create(mhcTransferLogs); err != nil {
+						utils.SysLog.Errorln("插入MHC交易记录出错")
+						break
+					}
+				}
+			}
+		}
+	}
 }

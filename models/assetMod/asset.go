@@ -52,13 +52,12 @@ type MHCTransferLog struct {
 	To          string
 	Gas         uint64
 
-	GasPrice int64
-	GasUsed  uint64
-	Value    float64
-
+	GasPrice   int64
+	GasUsed    uint64
+	Value      float64
+	Nonce      int64
 	Free       float64
 	Status     int
-	Nonce      int64
 	TokenValue float64
 	TokenTo    string
 	InputData  string

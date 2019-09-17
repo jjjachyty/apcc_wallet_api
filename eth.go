@@ -18,7 +18,7 @@ var err error
 
 func main() {
 
-	client, err = ethclient.Dial("http://119.3.108.19:8110")
+	client, err = ethclient.Dial("ws://119.3.108.19:8110")
 	send()
 	Bal()
 }
@@ -45,7 +45,7 @@ func send() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	toAddress := common.HexToAddress("0x88761000d7fb6080490d54800fe5252e1a35d84d")
+	toAddress := common.HexToAddress("0xc75c843d573c3f5130c7861cbff3f3ef2cbc5d84")
 	tx := types.NewTransaction(nonce, toAddress, value, gasLimit, gasPrice, nil)
 	chainID, err := client.NetworkID(context.Background())
 	if err != nil {

@@ -7,9 +7,11 @@ import (
 	"apcc_wallet_api/services/commonSrv"
 	"apcc_wallet_api/services/userSrv"
 	"apcc_wallet_api/utils"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"math/big"
 	"mime/multipart"
 	"regexp"
 
@@ -80,7 +82,7 @@ func (UserController) LoginWithPW(c *gin.Context) {
 		}
 	}
 	fmt.Println(err, user)
-	utils.Response(c, err, map[string]interface{}{"User": gin.H{"IDCardAuth": user.IDCardAuth, "UUID": user.UUID, "Phone": user.Phone, "HasPayPasswd": user.HasPayPasswd, "NickName": user.NickName, "Avatar": user.Avatar}, "Token": token})
+	utils.Response(c, err, map[string]interface{}{"User": gin.H{"IDCardAuth": user.IDCardAuth, "UUID": user.UUID, "Phone": user.Phone, "Introduce": user.Introduce, "HasPayPasswd": user.HasPayPasswd, "NickName": user.NickName, "Avatar": user.Avatar}, "Token": token})
 }
 
 //LoginWithSMS 短信验证码登录
@@ -106,7 +108,7 @@ func (UserController) LoginWithSMS(c *gin.Context) {
 		}
 	}
 	fmt.Println(user)
-	utils.Response(c, err, map[string]interface{}{"User": gin.H{"IDCardAuth": user.IDCardAuth, "UUID": user.UUID, "Phone": user.Phone, "HasPayPasswd": user.HasPayPasswd, "NickName": user.NickName, "Avatar": user.Avatar}, "Token": token})
+	utils.Response(c, err, map[string]interface{}{"User": gin.H{"IDCardAuth": user.IDCardAuth, "UUID": user.UUID, "Phone": user.Phone, "Introduce": user.Introduce, "HasPayPasswd": user.HasPayPasswd, "NickName": user.NickName, "Avatar": user.Avatar}, "Token": token})
 
 }
 
@@ -160,8 +162,9 @@ func (UserController) Profile(c *gin.Context) {
 	var fh *multipart.FileHeader
 	var file multipart.File
 	var imageBytes []byte
-
+	var user userMod.User
 	nickName := c.PostForm("nickName")
+	introduce := c.PostForm("introduce")
 	claims := jwt.GetClaims(c)
 	if fh, _ = c.FormFile("avatar"); fh != nil {
 		if file, err = fh.Open(); err == nil {
@@ -170,8 +173,16 @@ func (UserController) Profile(c *gin.Context) {
 			err = commonSrv.UploadImage(claims.UUID, imageBytes)
 		}
 	}
-	if err == nil && nickName != "" {
-		err = userService.Update(&userMod.User{UUID: claims.UUID, Avatar: claims.UUID, NickName: nickName})
+	if err == nil {
+		user.UUID = claims.UUID
+		user.Avatar = claims.UUID
+		if nickName != "" {
+			user.NickName = nickName
+		}
+		if introduce != "" {
+			user.Introduce = introduce
+		}
+		err = userService.Update(&user)
 	}
 	utils.Response(c, err, nil)
 }
@@ -191,6 +202,26 @@ func (UserController) IDCard(c *gin.Context) {
 		}
 	}
 	utils.Response(c, err, nil)
+}
+
+func (UserController) GetUserByPhone(c *gin.Context) {
+	var err error
+	var phoneBytes []byte
+	var user = new(userMod.User)
+	phone := c.Param("id")
+	fmt.Println(c.Param("id"), c.Query("id"))
+	if phone != "" {
+		if len(phone) != 11 {
+			if phoneBytes, err = hex.DecodeString(phone); err == nil {
+				phone = big.NewInt(0).SetBytes(phoneBytes).String()
+			}
+
+		}
+		user.Phone = phone
+		err = userService.Get(user)
+	}
+	phoneInt, _ := big.NewInt(0).SetString(user.Phone, 10)
+	utils.Response(c, err, userMod.User{Avatar: user.Avatar, NickName: user.NickName, Phone: hex.EncodeToString(phoneInt.Bytes()), Introduce: user.Introduce})
 }
 
 func VerifyMobileFormat(mobileNum string) bool {

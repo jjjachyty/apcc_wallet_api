@@ -6,6 +6,7 @@ import (
 	"apcc_wallet_api/controllers/dappCtr"
 	"apcc_wallet_api/controllers/dimCtr"
 	"apcc_wallet_api/controllers/exchangeCtr"
+	"apcc_wallet_api/controllers/imCtr"
 	"apcc_wallet_api/controllers/transferCtr"
 	"apcc_wallet_api/controllers/userCtr"
 	"apcc_wallet_api/middlewares/jwt"
@@ -60,6 +61,19 @@ func WebRouter(router *gin.Engine) {
 			user.POST("/loginpasswd", userCtr.UserController{}.LoginPassword)
 			user.POST("/profile", userCtr.UserController{}.Profile)
 			user.POST("/idcard", userCtr.UserController{}.IDCard)
+			user.GET("/:id", userCtr.UserController{}.GetUserByPhone)
+		}
+
+		im := v1.Group("/im") //用户
+		{
+			friend := im.Group("/friend")
+			{
+				friend.POST("/apply", imCtr.FriendController{}.Apply)
+				friend.GET("/applys", imCtr.FriendController{}.GetApply)
+				friend.POST("/applys", imCtr.FriendController{}.UpdateApply) //更新好友请求说明
+				friend.POST("/agree", imCtr.FriendController{}.Agree)
+				friend.GET("/list", imCtr.FriendController{}.GetFriends)
+			}
 
 		}
 

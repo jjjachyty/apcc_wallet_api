@@ -42,10 +42,11 @@ type User struct {
 	// LastLoginTime   time.Time
 	LastLoginIP     string `xorm:"varchar(25) 'last_login_ip'"`
 	LastLoginDevice string
-	Identification  int // 账户标识/新客户、老客户
-	Level           int //账户等级
-	State           int //账户状态
-	IDCardAuth      int `xorm:"'id_card_auth'"`
+	Identification  int    // 账户标识/新客户、老客户
+	Level           int    //账户等级
+	State           int    //账户状态
+	Introduce       string //个人签名
+	IDCardAuth      int    `xorm:"'id_card_auth'"`
 }
 
 type IdCard struct {

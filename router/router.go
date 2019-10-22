@@ -62,6 +62,7 @@ func WebRouter(router *gin.Engine) {
 			user.POST("/profile", userCtr.UserController{}.Profile)
 			user.POST("/idcard", userCtr.UserController{}.IDCard)
 			user.GET("/:id", userCtr.UserController{}.GetUserByPhone)
+			user.POST("/occupation/apply", userCtr.UserOccupationController{}.Apply)
 		}
 
 		im := v1.Group("/im") //用户
